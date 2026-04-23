@@ -372,7 +372,7 @@ export default function Topbar() {
 
       {/* ── Notifications panel ────────────────────────────────── */}
       {showNotifs && (
-        <div ref={notifRef} style={{
+        <div style={{
           position:'fixed', top:58, right:16, zIndex:100,
           width:360, background:'var(--bg2)',
           border:'1px solid var(--b2)', borderRadius:14,
@@ -545,7 +545,7 @@ export default function Topbar() {
 
               {/* Submit */}
               <button onClick={submitTrade} disabled={!trade.ticker||!trade.qty||!trade.price||tradeSaved} style={{
-                width:'100%', padding:'12px', borderRadius:9, border:'none',
+                width:'100%', padding:'12px', borderRadius:9,
                 cursor: !trade.ticker||!trade.qty||!trade.price ? 'not-allowed' : 'pointer',
                 background: tradeSaved ? 'rgba(13,203,125,0.15)' : !trade.ticker||!trade.qty||!trade.price ? 'var(--bg4)' : trade.side==='BUY' ? 'linear-gradient(135deg,#0dcb7d,#0aa866)' : 'linear-gradient(135deg,#f54060,#c0392b)',
                 border: tradeSaved ? '1px solid rgba(13,203,125,0.3)' : 'none',
