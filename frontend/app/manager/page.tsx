@@ -5,6 +5,8 @@ import { Plus, FolderOpen, Trash2, Edit3, TrendingUp, BarChart3, Copy, ChevronRi
 import Badge from '@/components/ui/Badge'
 import SectionHeader from '@/components/ui/SectionHeader'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
+import dynamic from 'next/dynamic'
+const CSVImport = dynamic(() => import('@/components/CSVImport'), { ssr: false })
 import { useAuth } from '@/context/AuthContext'
 import { portfolioDb } from '@/lib/db'
 import type { Portfolio } from '@/lib/supabase'
@@ -197,6 +199,7 @@ function ManagerContent() {
   const [loading, setLoading]       = useState(true)
   const [saving, setSaving]         = useState(false)
   const [showForm, setShowForm]     = useState(false)
+  const [showCSV, setShowCSV]       = useState(false)
   const [editTarget, setEditTarget] = useState<Portfolio|null>(null)
   const [search, setSearch]         = useState('')
   const [error, setError]           = useState('')
@@ -270,6 +273,17 @@ function ManagerContent() {
 
   return (
     <div style={{ padding:'0 28px 52px' }}>
+      {showCSV && <CSVImport
+        onImport={async (name, holdings) => {
+          if (!user) return
+          try {
+            const created = await portfolioDb.create(user.id, { name, description:'Imported from CSV', strategy:'Long Only', color:'#0dcb7d', holdings })
+            setPortfolios(ps => [created, ...ps])
+          } catch (e: any) { setError(e.message) }
+          setShowCSV(false)
+        }}
+        onClose={() => setShowCSV(false)}
+      />}
       {showForm && <PortfolioForm initial={editTarget} onSave={handleSave} onClose={()=>{ setShowForm(false); setEditTarget(null) }} saving={saving}/>}
 
       <div style={{ margin:'24px 0 20px', display:'flex', alignItems:'flex-start', justifyContent:'space-between' }}>
@@ -277,9 +291,14 @@ function ManagerContent() {
           <h1 style={{ fontSize:24, fontWeight:700, letterSpacing:'-0.5px', marginBottom:5 }}>Portfolio Manager</h1>
           <div style={{ fontSize:13, color:'var(--text2)' }}>Create · Edit · Analyse · All saved to your account</div>
         </div>
-        <button onClick={()=>{ setEditTarget(null); setShowForm(true) }} style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 20px', borderRadius:9, background:'linear-gradient(135deg,#2d7ff9,#1a6de0)', border:'1px solid rgba(45,127,249,0.4)', color:'#fff', fontSize:13, fontWeight:600, cursor:'pointer', boxShadow:'0 0 20px rgba(45,127,249,0.25)' }}>
-          <Plus size={14} strokeWidth={2.5}/> New Portfolio
-        </button>
+        <div style={{ display:'flex', gap:8 }}>
+          <button onClick={()=>setShowCSV(true)} style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 18px', borderRadius:9, background:'rgba(13,203,125,0.1)', border:'1px solid rgba(13,203,125,0.25)', color:'var(--green)', fontSize:13, fontWeight:600, cursor:'pointer' }}>
+            📂 Import CSV
+          </button>
+          <button onClick={()=>{ setEditTarget(null); setShowForm(true) }} style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 20px', borderRadius:9, background:'linear-gradient(135deg,#2d7ff9,#1a6de0)', border:'1px solid rgba(45,127,249,0.4)', color:'#fff', fontSize:13, fontWeight:600, cursor:'pointer', boxShadow:'0 0 20px rgba(45,127,249,0.25)' }}>
+            <Plus size={14} strokeWidth={2.5}/> New Portfolio
+          </button>
+        </div>
       </div>
 
       {error && <div style={{ marginBottom:16, background:'rgba(245,64,96,0.08)', border:'1px solid rgba(245,64,96,0.2)', borderRadius:10, padding:'10px 14px', fontSize:12.5, color:'var(--red)' }}>{error}</div>}
