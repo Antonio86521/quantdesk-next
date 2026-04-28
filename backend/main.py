@@ -1,3 +1,4 @@
+# QuantDesk Pro API v2.0 — force redeploy
 """
 QuantDesk Pro — FastAPI Backend
 Wraps analytics.py, data_loader.py, options_models.py, strategies.py
