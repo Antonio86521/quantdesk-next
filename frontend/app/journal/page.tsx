@@ -15,6 +15,14 @@ export default function JournalPage() {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ ticker:'', side:'BUY' as 'BUY'|'SELL', qty:'', price:'', type:'Stock', notes:'' })
   const [error, setError] = useState('')
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   useEffect(() => { if (user) load(); else setLoading(false) }, [user])
 
@@ -47,18 +55,16 @@ export default function JournalPage() {
     } catch (e: any) { setError(e.message) }
   }
 
-  // Stats
-  const totalTrades  = trades.length
-  const winRate      = totalTrades ? Math.round(trades.filter(t=>t.side==='SELL').length/totalTrades*100) : 0
-  const totalBought  = trades.filter(t=>t.side==='BUY').reduce((s,t)=>s+t.qty*t.price,0)
-  const totalSold    = trades.filter(t=>t.side==='SELL').reduce((s,t)=>s+t.qty*t.price,0)
+  const totalTrades   = trades.length
+  const totalBought   = trades.filter(t=>t.side==='BUY').reduce((s,t)=>s+t.qty*t.price,0)
+  const totalSold     = trades.filter(t=>t.side==='SELL').reduce((s,t)=>s+t.qty*t.price,0)
   const uniqueTickers = new Set(trades.map(t=>t.ticker)).size
 
   return (
-    <div style={{ padding:'0 28px 52px' }}>
-      <div style={{ margin:'24px 0 20px', display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
+    <div style={{ padding: isMobile ? '0 14px 80px' : '0 28px 52px' }}>
+      <div style={{ margin:'24px 0 20px', display:'flex', justifyContent:'space-between', alignItems:'flex-start', flexWrap:'wrap', gap:12 }}>
         <div>
-          <h1 style={{ fontSize:24, fontWeight:700, letterSpacing:'-0.5px', marginBottom:5 }}>Trade Journal</h1>
+          <h1 style={{ fontSize: isMobile?20:24, fontWeight:700, letterSpacing:'-0.5px', marginBottom:5 }}>Trade Journal</h1>
           <div style={{ fontSize:13, color:'var(--text2)' }}>Log trades · Track performance · {user ? 'Saved to your account' : 'Sign in to save permanently'}</div>
         </div>
         <button onClick={()=>setShowForm(x=>!x)} style={{ padding:'8px 18px', borderRadius:8, background:'linear-gradient(135deg,#2d7ff9,#1a6de0)', border:'1px solid rgba(45,127,249,0.4)', color:'#fff', fontSize:13, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:6 }}>
@@ -68,17 +74,17 @@ export default function JournalPage() {
 
       {error && <div style={{ marginBottom:16, background:'rgba(245,64,96,0.08)', border:'1px solid rgba(245,64,96,0.2)', borderRadius:10, padding:'10px 14px', fontSize:12.5, color:'var(--red)' }}>{error}</div>}
 
-      {/* Stats */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:20 }}>
+      {/* Stats — 2-col on mobile, 4-col on desktop */}
+      <div style={{ display:'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap:12, marginBottom:20 }}>
         {[
-          { l:'Total Trades',   v:String(totalTrades),  c:'var(--text)' },
+          { l:'Total Trades',   v:String(totalTrades),   c:'var(--text)' },
           { l:'Unique Tickers', v:String(uniqueTickers), c:'var(--accent2)' },
           { l:'Total Bought',   v:totalBought>=1e3?`$${totalBought.toLocaleString('en',{maximumFractionDigits:0})}`:`$${totalBought.toFixed(2)}`, c:'var(--red)' },
           { l:'Total Sold',     v:totalSold>=1e3?`$${totalSold.toLocaleString('en',{maximumFractionDigits:0})}`:`$${totalSold.toFixed(2)}`, c:'var(--green)' },
         ].map(({ l, v, c }) => (
           <div key={l} style={{ background:'var(--bg3)', border:'1px solid var(--b1)', borderRadius:12, padding:'14px 16px' }}>
             <div style={{ fontSize:10.5, color:'var(--text2)', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:8 }}>{l}</div>
-            <div style={{ fontFamily:'var(--fm)', fontSize:22, fontWeight:300, color:c }}>{v}</div>
+            <div style={{ fontFamily:'var(--fm)', fontSize: isMobile?18:22, fontWeight:300, color:c, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{v}</div>
           </div>
         ))}
       </div>
@@ -93,7 +99,7 @@ export default function JournalPage() {
               </button>
             ))}
           </div>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:12, marginBottom:12 }}>
+          <div style={{ display:'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : '1fr 1fr 1fr 1fr', gap:12, marginBottom:12 }}>
             <div>
               <div style={{ fontSize:10.5, color:'var(--text2)', marginBottom:5 }}>Ticker</div>
               <input className="qd-input" placeholder="AAPL" value={form.ticker} onChange={e=>setForm(x=>({...x,ticker:e.target.value.toUpperCase()}))}/>
@@ -146,29 +152,31 @@ export default function JournalPage() {
         </div>
       ) : (
         <div style={{ background:'var(--bg2)', border:'1px solid var(--b1)', borderRadius:14, overflow:'hidden' }}>
-          <table className="qd-table">
-            <thead><tr><th>Date</th><th>Ticker</th><th>Side</th><th>Type</th><th>Qty</th><th>Price</th><th>Value</th><th>Notes</th><th></th></tr></thead>
-            <tbody>
-              {trades.map(t=>(
-                <tr key={t.id}>
-                  <td style={{ color:'var(--text2)', fontSize:11.5 }}>{t.date}</td>
-                  <td><span style={{ fontFamily:'var(--fm)', fontWeight:600, color:'var(--accent2)' }}>{t.ticker}</span></td>
-                  <td><span style={{ fontFamily:'var(--fm)', fontSize:11, fontWeight:700, padding:'2px 7px', borderRadius:4, color:t.side==='BUY'?'var(--green)':'var(--red)', background:t.side==='BUY'?'rgba(13,203,125,0.1)':'rgba(245,64,96,0.1)' }}>{t.side}</span></td>
-                  <td><span style={{ fontSize:11.5, color:'var(--text2)' }}>{t.type}</span></td>
-                  <td className="mono">{t.qty}</td>
-                  <td className="mono">${Number(t.price).toFixed(2)}</td>
-                  <td className="mono">${(t.qty*t.price).toLocaleString('en',{maximumFractionDigits:0})}</td>
-                  <td style={{ color:'var(--text2)', fontSize:11.5, maxWidth:180, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{t.notes}</td>
-                  <td>
-                    <button onClick={()=>remove(t.id)} style={{ background:'transparent', border:'none', cursor:'pointer', padding:4, color:'var(--text3)', transition:'color 0.14s' }}
-                      onMouseEnter={e=>(e.currentTarget as HTMLElement).style.color='var(--red)'}
-                      onMouseLeave={e=>(e.currentTarget as HTMLElement).style.color='var(--text3)'}
-                    ><Trash2 size={13}/></button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div style={{ overflowX:'auto', WebkitOverflowScrolling:'touch' }}>
+            <table className="qd-table" style={{ minWidth: isMobile ? 600 : 'auto' }}>
+              <thead><tr><th>Date</th><th>Ticker</th><th>Side</th><th>Type</th><th>Qty</th><th>Price</th><th>Value</th><th>Notes</th><th></th></tr></thead>
+              <tbody>
+                {trades.map(t=>(
+                  <tr key={t.id}>
+                    <td style={{ color:'var(--text2)', fontSize:11.5 }}>{t.date}</td>
+                    <td><span style={{ fontFamily:'var(--fm)', fontWeight:600, color:'var(--accent2)' }}>{t.ticker}</span></td>
+                    <td><span style={{ fontFamily:'var(--fm)', fontSize:11, fontWeight:700, padding:'2px 7px', borderRadius:4, color:t.side==='BUY'?'var(--green)':'var(--red)', background:t.side==='BUY'?'rgba(13,203,125,0.1)':'rgba(245,64,96,0.1)' }}>{t.side}</span></td>
+                    <td><span style={{ fontSize:11.5, color:'var(--text2)' }}>{t.type}</span></td>
+                    <td className="mono">{t.qty}</td>
+                    <td className="mono">${Number(t.price).toFixed(2)}</td>
+                    <td className="mono">${(t.qty*t.price).toLocaleString('en',{maximumFractionDigits:0})}</td>
+                    <td style={{ color:'var(--text2)', fontSize:11.5, maxWidth:180, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{t.notes}</td>
+                    <td>
+                      <button onClick={()=>remove(t.id)} style={{ background:'transparent', border:'none', cursor:'pointer', padding:4, color:'var(--text3)', transition:'color 0.14s' }}
+                        onMouseEnter={e=>(e.currentTarget as HTMLElement).style.color='var(--red)'}
+                        onMouseLeave={e=>(e.currentTarget as HTMLElement).style.color='var(--text3)'}
+                      ><Trash2 size={13}/></button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

@@ -84,12 +84,6 @@ h1, h2, h3, h4, h5 { font-family: var(--fd); letter-spacing: -0.4px; }
   color: var(--text); font-size: 13px; padding: 8px 12px; outline: none; cursor: pointer;
 }
 
-/* Mobile — prevent zoom on iOS */
-@media (max-width: 768px) {
-  .qd-input  { font-size: 16px; padding: 10px 14px; }
-  .qd-select { font-size: 16px; padding: 10px 14px; }
-}
-
 /* ── TABLES ── */
 .qd-table { width: 100%; border-collapse: collapse; }
 .qd-table th { text-align:left; padding:9px 14px; font-size:10px; color:var(--text3); font-weight:700; letter-spacing:0.8px; text-transform:uppercase; border-bottom:1px solid var(--b2); white-space:nowrap; }
@@ -113,14 +107,66 @@ h1, h2, h3, h4, h5 { font-family: var(--fd); letter-spacing: -0.4px; }
   z-index: 100;
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
-@media (max-width: 768px) {
-  .bottom-nav { display: flex; align-items: center; justify-content: space-around; }
-  main > div.page-enter { padding-bottom: calc(var(--bottom-nav-height) + 24px) !important; }
-}
 
 /* ── SIDEBAR OVERLAY (mobile) ── */
 .sidebar-overlay {
   position: fixed; inset:0; background:rgba(0,0,0,0.65);
   backdrop-filter: blur(4px); z-index: 39;
   animation: fadeIn 0.2s ease;
+}
+
+/* ═══════════════════════════════════════════════════════
+   MOBILE OVERRIDES — all pages
+   ═══════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* ── Bottom nav ── */
+  .bottom-nav { display: flex; align-items: center; justify-content: space-around; }
+  main > div.page-enter { padding-bottom: calc(var(--bottom-nav-height) + 24px) !important; }
+
+  /* ── Prevent iOS zoom on inputs ── */
+  .qd-input  { font-size: 16px; padding: 10px 14px; }
+  .qd-select { font-size: 16px; padding: 10px 14px; }
+
+  /* ── Page padding ── */
+  .page-enter > div { padding-left: 14px !important; padding-right: 14px !important; }
+
+  /* ── Tables: horizontal scroll on mobile ── */
+  .qd-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .qd-table th, .qd-table td { padding: 8px 10px; font-size: 11px; white-space: nowrap; }
+
+  /* ══════════════════════════════════════════
+     GRID FIXES — collapse to 2-col on mobile
+     These target every repeat(3,1fr) and repeat(4,1fr)
+     grid used across all pages
+     ══════════════════════════════════════════ */
+
+  /* 4-col → 2-col (metric cards, market tiles, etc.) */
+  .grid-4 { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* 3-col → 2-col (risk metrics, derivatives reference, etc.) */
+  .grid-3 { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* 2-col → 1-col (side-by-side panels) */
+  .grid-2 { grid-template-columns: 1fr !important; }
+
+  /* 5-col → 2-col (technicals row) */
+  .grid-5 { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* Input grids — always single col on mobile */
+  .grid-inputs { grid-template-columns: 1fr !important; }
+
+  /* ── Headings ── */
+  h1 { font-size: 20px !important; }
+
+  /* ── Hero sections ── */
+  .hero-counters { flex-direction: column !important; width: 100% !important; }
+  .hero-counters > div { border-right: none !important; border-bottom: 1px solid var(--b1); }
+  .hero-counters > div:last-child { border-bottom: none; }
+
+  /* ── Sidebar: hidden on mobile ── */
+  .sidebar-desktop { display: none !important; }
+
+  /* ── Charts: reduce height on mobile ── */
+  .recharts-responsive-container { min-height: 180px; }
 }

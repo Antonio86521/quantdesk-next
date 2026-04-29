@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { api } from '@/lib/api'
 import MetricCard from '@/components/ui/MetricCard'
 import Badge from '@/components/ui/Badge'
@@ -11,6 +11,14 @@ export default function FactorPage() {
   const [buyPrices, setBuyPrices] = useState('182,380,650,160,490')
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   const run = async () => {
     setLoading(true)
@@ -22,14 +30,17 @@ export default function FactorPage() {
   const s = data?.summary
 
   return (
-    <div style={{ padding:'0 28px 52px' }}>
-      <div style={{ margin:'24px 0 20px', display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
-        <div><h1 style={{ fontSize:24, fontWeight:700, letterSpacing:'-0.5px', marginBottom:5 }}>Factor Exposure</h1><div style={{ fontSize:13, color:'var(--text2)' }}>Beta · Alpha · R² · Systematic vs Idiosyncratic Risk</div></div>
+    <div style={{ padding: isMobile ? '0 14px 80px' : '0 28px 52px' }}>
+      <div style={{ margin:'24px 0 20px', display:'flex', justifyContent:'space-between', alignItems:'flex-start', flexWrap:'wrap', gap:12 }}>
+        <div>
+          <h1 style={{ fontSize: isMobile?20:24, fontWeight:700, letterSpacing:'-0.5px', marginBottom:5 }}>Factor Exposure</h1>
+          <div style={{ fontSize:13, color:'var(--text2)' }}>Beta · Alpha · R² · Systematic vs Idiosyncratic Risk</div>
+        </div>
         {data && <Badge variant="purple">Factor Model</Badge>}
       </div>
 
       <div style={{ background:'var(--bg2)', border:'1px solid var(--b1)', borderRadius:14, padding:'18px 20px', marginBottom:20 }}>
-        <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr 1fr', gap:12, marginBottom:14 }}>
+        <div style={{ display:'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr 1fr', gap:12, marginBottom:14 }}>
           {[['Tickers',tickers,setTickers],['Shares',shares,setShares],['Buy Prices',buyPrices,setBuyPrices]].map(([l,v,s]:any)=>(
             <div key={l}><div style={{ fontSize:10.5, color:'var(--text2)', marginBottom:5 }}>{l}</div><input className="qd-input" value={v} onChange={e=>s(e.target.value)}/></div>
           ))}
@@ -39,26 +50,33 @@ export default function FactorPage() {
         </button>
       </div>
 
-      {!data&&!loading&&<div style={{ background:'var(--bg2)', border:'1px solid var(--b1)', borderRadius:14, padding:48, textAlign:'center' }}><div style={{ fontSize:32, marginBottom:12, opacity:0.4 }}>🧪</div><div style={{ fontFamily:'var(--fd)', fontSize:16, fontWeight:600, marginBottom:8 }}>Factor Analysis Ready</div><div style={{ fontSize:13, color:'var(--text2)', maxWidth:400, margin:'0 auto' }}>Compute market beta, alpha, R², and systematic risk decomposition for your portfolio.</div></div>}
+      {!data&&!loading&&(
+        <div style={{ background:'var(--bg2)', border:'1px solid var(--b1)', borderRadius:14, padding:48, textAlign:'center' }}>
+          <div style={{ fontSize:32, marginBottom:12, opacity:0.4 }}>🧪</div>
+          <div style={{ fontFamily:'var(--fd)', fontSize:16, fontWeight:600, marginBottom:8 }}>Factor Analysis Ready</div>
+          <div style={{ fontSize:13, color:'var(--text2)', maxWidth:400, margin:'0 auto' }}>Compute market beta, alpha, R², and systematic risk decomposition for your portfolio.</div>
+        </div>
+      )}
 
       {data&&s&&(<>
         <SectionHeader title="Market Factor (CAPM)" />
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:20 }}>
-          <MetricCard label="Market Beta"   value={s.beta?.toFixed(3)||'—'} delta="Market sensitivity" accent="#7c5cfc"/>
-          <MetricCard label="Alpha (Ann.)"  value={`${((s.alpha||0)*100).toFixed(2)}%`} delta={`vs ${s.benchmark}`} deltaUp={s.alpha>0}/>
-          <MetricCard label="R² (R-Squared)" value={s.r2?.toFixed(3)||'—'} delta="% variance explained by market"/>
-          <MetricCard label="Tracking Error" value={`${((s.trackingError||0)*100).toFixed(2)}%`} delta="Active risk vs benchmark"/>
+        {/* 2-col on mobile, 4-col on desktop */}
+        <div style={{ display:'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap:12, marginBottom:20 }}>
+          <MetricCard label="Market Beta"    value={s.beta?.toFixed(3)||'—'}                         delta="Market sensitivity"            accent="#7c5cfc"/>
+          <MetricCard label="Alpha (Ann.)"   value={`${((s.alpha||0)*100).toFixed(2)}%`}             delta={`vs ${s.benchmark}`}           deltaUp={s.alpha>0}/>
+          <MetricCard label="R² (R-Squared)" value={s.r2?.toFixed(3)||'—'}                           delta="% variance explained by market"/>
+          <MetricCard label="Tracking Error" value={`${((s.trackingError||0)*100).toFixed(2)}%`}    delta="Active risk vs benchmark"/>
         </div>
 
         <SectionHeader title="Risk Decomposition" />
         <div style={{ background:'var(--bg2)', border:'1px solid var(--b1)', borderRadius:14, padding:'18px 20px' }}>
           {[
-            { label:'Systematic Risk (β × σ_m)', value:`${(Math.abs(s.beta||1)*8).toFixed(1)}%`, desc:'Risk attributable to market exposure', color:'var(--accent2)' },
-            { label:'Idiosyncratic Risk',          value:`${((s.annVol||0)*100 - Math.abs(s.beta||1)*8).toFixed(1)}%`, desc:'Stock-specific risk not explained by market', color:'var(--purple)' },
-            { label:'Total Volatility',            value:`${((s.annVol||0)*100).toFixed(2)}%`, desc:'Combined systematic and idiosyncratic risk', color:'var(--text)' },
-            { label:'Information Ratio',           value:s.infoRatio?.toFixed(3)||'—', desc:'Active return divided by tracking error', color: s.infoRatio>0?'var(--green)':'var(--red)' },
+            { label:'Systematic Risk (β × σ_m)', value:`${(Math.abs(s.beta||1)*8).toFixed(1)}%`,                                       desc:'Risk attributable to market exposure',          color:'var(--accent2)' },
+            { label:'Idiosyncratic Risk',          value:`${((s.annVol||0)*100 - Math.abs(s.beta||1)*8).toFixed(1)}%`,                  desc:'Stock-specific risk not explained by market',  color:'var(--purple)' },
+            { label:'Total Volatility',            value:`${((s.annVol||0)*100).toFixed(2)}%`,                                          desc:'Combined systematic and idiosyncratic risk',   color:'var(--text)' },
+            { label:'Information Ratio',           value:s.infoRatio?.toFixed(3)||'—',                                                  desc:'Active return divided by tracking error',       color: s.infoRatio>0?'var(--green)':'var(--red)' },
           ].map(({ label, value, desc, color }, i) => (
-            <div key={i} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 0', borderBottom: i<3?'1px solid rgba(255,255,255,0.04)':'none' }}>
+            <div key={i} style={{ display:'flex', alignItems: isMobile ? 'flex-start' : 'center', flexDirection: isMobile ? 'column' : 'row', justifyContent:'space-between', gap: isMobile ? 4 : 0, padding:'12px 0', borderBottom: i<3?'1px solid rgba(255,255,255,0.04)':'none' }}>
               <div><div style={{ fontSize:13, fontWeight:500, marginBottom:3 }}>{label}</div><div style={{ fontSize:11.5, color:'var(--text2)' }}>{desc}</div></div>
               <span style={{ fontFamily:'var(--fm)', fontSize:16, fontWeight:300, color }}>{value}</span>
             </div>

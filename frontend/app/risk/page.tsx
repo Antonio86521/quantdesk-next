@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { api } from '@/lib/api'
 import MetricCard from '@/components/ui/MetricCard'
 import Badge from '@/components/ui/Badge'
@@ -27,6 +27,14 @@ export default function RiskPage() {
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   const run = async () => {
     setLoading(true); setError('')
@@ -38,19 +46,23 @@ export default function RiskPage() {
   const s = data?.summary
 
   return (
-    <div style={{ padding:'0 28px 52px' }}>
-      <div style={{ margin:'24px 0 20px', display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
-        <div><h1 style={{ fontSize:24, fontWeight:700, letterSpacing:'-0.5px', marginBottom:5 }}>Risk & Attribution</h1><div style={{ fontSize:13, color:'var(--text2)' }}>VaR · CVaR · Drawdown · Beta · Stress Testing</div></div>
+    <div style={{ padding: isMobile ? '0 14px 80px' : '0 28px 52px' }}>
+      <div style={{ margin:'24px 0 20px', display:'flex', justifyContent:'space-between', alignItems:'flex-start', flexWrap:'wrap', gap:12 }}>
+        <div>
+          <h1 style={{ fontSize: isMobile?20:24, fontWeight:700, letterSpacing:'-0.5px', marginBottom:5 }}>Risk & Attribution</h1>
+          <div style={{ fontSize:13, color:'var(--text2)' }}>VaR · CVaR · Drawdown · Beta · Stress Testing</div>
+        </div>
         {data && <Badge variant="red">Risk Analysis</Badge>}
       </div>
 
       <div style={{ background:'var(--bg2)', border:'1px solid var(--b1)', borderRadius:14, padding:'18px 20px', marginBottom:20 }}>
-        <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr 1fr 1fr', gap:12, marginBottom:14 }}>
+        {/* Input grid — 2-col on mobile, 4-col on desktop */}
+        <div style={{ display:'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : '2fr 1fr 1fr 1fr', gap:12, marginBottom:14 }}>
           {[['Tickers','tickers','AAPL,MSFT,NVDA'],['Shares','shares','20,15,10'],['Buy Prices ($)','buyPrices','182,380,650'],['Risk-Free %','riskFree','2.0']].map(([l,k,p])=>(
             <div key={k}><div style={{ fontSize:10.5, color:'var(--text2)', marginBottom:5 }}>{l}</div><input className="qd-input" placeholder={p} value={(inp as any)[k]} onChange={e=>setInp(x=>({...x,[k]:e.target.value}))}/></div>
           ))}
         </div>
-        <div style={{ display:'flex', gap:12, alignItems:'flex-end' }}>
+        <div style={{ display:'flex', gap:12, alignItems:'flex-end', flexWrap:'wrap' }}>
           {[['Period','period',['1mo','3mo','6mo','1y','2y','5y']],['Benchmark','benchmark',['SPY','QQQ','DIA','IWM']]].map(([l,k,opts]:any)=>(
             <div key={k}><div style={{ fontSize:10.5, color:'var(--text2)', marginBottom:5 }}>{l}</div><select className="qd-select" value={(inp as any)[k]} onChange={e=>setInp(x=>({...x,[k]:e.target.value}))}>{opts.map((o:string)=><option key={o}>{o}</option>)}</select></div>
           ))}
@@ -61,18 +73,28 @@ export default function RiskPage() {
         {error&&<div style={{ marginTop:12, fontSize:12, color:'var(--red)', background:'rgba(245,64,96,0.08)', border:'1px solid rgba(245,64,96,0.2)', borderRadius:7, padding:'8px 12px' }}>{error}</div>}
       </div>
 
-      {!data&&!loading&&<div style={{ background:'var(--bg2)', border:'1px solid var(--b1)', borderRadius:14, padding:48, textAlign:'center' }}><div style={{ fontSize:32, marginBottom:12, opacity:0.4 }}>⚡</div><div style={{ fontFamily:'var(--fd)', fontSize:16, fontWeight:600, marginBottom:8 }}>Risk Analysis Ready</div><div style={{ fontSize:13, color:'var(--text2)', maxWidth:400, margin:'0 auto' }}>Run a full risk analysis including VaR, CVaR, drawdown profile, beta, alpha and stress test metrics.</div></div>}
+      {!data&&!loading&&(
+        <div style={{ background:'var(--bg2)', border:'1px solid var(--b1)', borderRadius:14, padding:48, textAlign:'center' }}>
+          <div style={{ fontSize:32, marginBottom:12, opacity:0.4 }}>⚡</div>
+          <div style={{ fontFamily:'var(--fd)', fontSize:16, fontWeight:600, marginBottom:8 }}>Risk Analysis Ready</div>
+          <div style={{ fontSize:13, color:'var(--text2)', maxWidth:400, margin:'0 auto' }}>Run a full risk analysis including VaR, CVaR, drawdown profile, beta, alpha and stress test metrics.</div>
+        </div>
+      )}
 
       {data&&s&&(<>
         <SectionHeader title="Value at Risk" />
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12, marginBottom:20 }}>
+        {/* 3-col → 2-col on mobile (last card goes full width) */}
+        <div style={{ display:'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(3,1fr)', gap:12, marginBottom:20 }}>
           <MetricCard label="Historical VaR 95%" value={fmt.pct(s.histVar95)}  delta="Daily loss exceeded 5% of time" deltaUp={false} accent="#f54060"/>
           <MetricCard label="CVaR / ES 95%"      value={fmt.pct(s.histCVar95)} delta="Average loss in worst 5%"       deltaUp={false} accent="#f54060"/>
-          <MetricCard label="Parametric VaR 95%" value={fmt.pct(s.paramVar95)} delta="Normal distribution assumption"/>
+          <div style={{ gridColumn: isMobile ? '1 / -1' : 'auto' }}>
+            <MetricCard label="Parametric VaR 95%" value={fmt.pct(s.paramVar95)} delta="Normal distribution assumption"/>
+          </div>
         </div>
 
         <SectionHeader title="Risk Metrics" />
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:20 }}>
+        {/* 4-col → 2-col on mobile */}
+        <div style={{ display:'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap:12, marginBottom:20 }}>
           <MetricCard label="Max Drawdown"    value={fmt.pct(s.maxDrawdown)}    delta="Peak to trough"      deltaUp={false}/>
           <MetricCard label="Ann. Volatility" value={fmt.pct(s.annVol)}          delta="Realised annual vol"/>
           <MetricCard label="Beta"            value={fmt.num(s.beta)}            delta={`vs ${s.benchmark}`}/>
@@ -83,10 +105,11 @@ export default function RiskPage() {
           <MetricCard label="Info Ratio"      value={fmt.num(s.infoRatio)}       delta="Active return / TE"    deltaUp={s.infoRatio>0}/>
         </div>
 
-        <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr', gap:16, marginBottom:16 }}>
+        {/* Charts — stacked on mobile */}
+        <div style={{ display:'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr', gap:16, marginBottom:16 }}>
           <div style={{ background:'var(--bg2)', border:'1px solid var(--b1)', borderRadius:14, padding:'16px 20px' }}>
             <div style={{ fontFamily:'var(--fd)', fontSize:13.5, fontWeight:700, marginBottom:16 }}>Drawdown Profile</div>
-            <ResponsiveContainer width="100%" height={220}>
+            <ResponsiveContainer width="100%" height={isMobile?180:220}>
               <AreaChart data={data.charts.drawdown?.map((d:any)=>({...d,value:d.value*100}))}>
                 <defs><linearGradient id="rdd" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#f54060" stopOpacity={0.25}/><stop offset="95%" stopColor="#f54060" stopOpacity={0.01}/></linearGradient></defs>
                 <XAxis dataKey="date" tick={{ fontSize:9, fill:'#304560' }} tickLine={false} axisLine={false} interval="preserveStartEnd"/>
@@ -100,7 +123,14 @@ export default function RiskPage() {
 
           <div style={{ background:'var(--bg2)', border:'1px solid var(--b1)', borderRadius:14, padding:'16px 20px' }}>
             <div style={{ fontFamily:'var(--fd)', fontSize:13.5, fontWeight:700, marginBottom:16 }}>Extended Stats</div>
-            {[['Skewness',fmt.num(s.skewness,3),s.skewness<0?'var(--red)':'var(--green)'],['Excess Kurtosis',fmt.num(s.kurtosis,3),s.kurtosis>3?'var(--red)':'var(--text)'],['Omega Ratio',fmt.num(s.omega),s.omega>1?'var(--green)':'var(--red)'],['Gain/Pain',fmt.num(s.gainToPain),s.gainToPain>1?'var(--green)':'var(--red)'],['Alpha (Ann.)',fmt.pctPlus(s.alpha),s.alpha>0?'var(--green)':'var(--red)'],['R² vs Bench',fmt.num(s.r2,3),'var(--text)']].map(([l,v,c],i)=>(
+            {[
+              ['Skewness',       fmt.num(s.skewness,3),  s.skewness<0?'var(--red)':'var(--green)'],
+              ['Excess Kurtosis',fmt.num(s.kurtosis,3),  s.kurtosis>3?'var(--red)':'var(--text)'],
+              ['Omega Ratio',    fmt.num(s.omega),        s.omega>1?'var(--green)':'var(--red)'],
+              ['Gain/Pain',      fmt.num(s.gainToPain),  s.gainToPain>1?'var(--green)':'var(--red)'],
+              ['Alpha (Ann.)',   fmt.pctPlus(s.alpha),   s.alpha>0?'var(--green)':'var(--red)'],
+              ['R² vs Bench',   fmt.num(s.r2,3),         'var(--text)'],
+            ].map(([l,v,c],i)=>(
               <div key={i} style={{ display:'flex', justifyContent:'space-between', padding:'9px 0', borderBottom:i<5?'1px solid rgba(255,255,255,0.04)':'none' }}>
                 <span style={{ fontSize:12, color:'var(--text2)' }}>{l}</span>
                 <span style={{ fontFamily:'var(--fm)', fontSize:12.5, color:c as string }}>{v}</span>
