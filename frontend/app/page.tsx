@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import {
   ArrowRight, TrendingUp, Zap, Settings2, Waves, Dice5,
@@ -74,6 +74,14 @@ export default function Dashboard() {
   const [watchlist, setWatchlist] = useState<any[]>([])
   const [loading,   setLoading]   = useState(true)
   const [lastUpdate, setLastUpdate] = useState('')
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth <= 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   const hour     = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
@@ -104,15 +112,15 @@ export default function Dashboard() {
   const n_down = watchlist.filter(w => !w.up).length
 
   return (
-    <div style={{ padding:'0 28px 52px' }}>
+    <div style={{ padding:isMobile?'0 14px 80px':'0 28px 52px' }}>
 
       {/* ── Hero ─────────────────────────────────────────────────── */}
       <div style={{
         position:'relative', overflow:'hidden',
         background:'linear-gradient(135deg, rgba(45,127,249,0.09) 0%, rgba(124,92,252,0.05) 45%, transparent 75%), var(--bg2)',
         border:'1px solid var(--b1)', borderRadius:18,
-        padding:'30px 36px', margin:'22px 0 18px',
-        display:'flex', alignItems:'center', justifyContent:'space-between', gap:32,
+        padding:isMobile?'20px 18px':'30px 36px', margin:'22px 0 18px',
+        display:'flex', alignItems:isMobile?'flex-start':'center', justifyContent:'space-between', gap:isMobile?16:32, flexDirection:isMobile?'column':'row',
       }}>
         <div style={{ position:'absolute', top:-100, right:-100, width:320, height:320, borderRadius:'50%', background:'radial-gradient(circle, rgba(45,127,249,0.1) 0%, transparent 65%)', pointerEvents:'none' }} />
 
@@ -121,7 +129,7 @@ export default function Dashboard() {
             <span style={{ width:6, height:6, borderRadius:'50%', background:'var(--accent2)', display:'inline-block', animation:'pulse 2s ease-in-out infinite' }} />
             Market Intelligence Terminal
           </div>
-          <h1 style={{ fontSize:32, fontWeight:700, letterSpacing:'-0.8px', color:'var(--text)', lineHeight:1.15, marginBottom:10 }}>
+          <h1 style={{ fontSize:isMobile?22:32, fontWeight:700, letterSpacing:'-0.5px', color:'var(--text)', lineHeight:1.15, marginBottom:10 }}>
             {greeting} — welcome back
           </h1>
           <div style={{ fontSize:13, color:'var(--text2)', display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
@@ -154,7 +162,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── Market strip — LIVE from API ─────────────────────────── */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(6,1fr)', border:'1px solid var(--b1)', borderRadius:14, overflow:'hidden', marginBottom:24 }}>
+      <div style={{ display:'grid', gridTemplateColumns:isMobile?'repeat(3,1fr)':'repeat(6,1fr)', border:'1px solid var(--b1)', borderRadius:14, overflow:'hidden', marginBottom:24 }}>
         {(loading ? Array(6).fill(null) : market.slice(0,6)).map((m,i) => (
           <div key={i} style={{ padding:'15px 18px', borderRight: i<5?'1px solid rgba(255,255,255,0.04)':'none', background:'var(--bg2)', transition:'background 0.15s', minHeight:88 }}
             onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--bg3)'}
@@ -188,14 +196,14 @@ export default function Dashboard() {
       </div>
 
       {/* ── Modules + Watchlist ──────────────────────────────────── */}
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 284px', gap:20, alignItems:'start' }}>
+      <div style={{ display:'grid', gridTemplateColumns:isMobile?'1fr':'1fr 284px', gap:20, alignItems:'start' }}>
 
         {/* Modules grid */}
         <div>
           <SectionHeader title="All Modules" action={
             <span style={{ fontSize:11, color:'var(--text3)' }}>14 tools · Python-powered</span>
           } />
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10 }}>
+          <div style={{ display:'grid', gridTemplateColumns:isMobile?'repeat(2,1fr)':'repeat(4,1fr)', gap:10 }}>
             {MODULES.map(m => <ModuleCard key={m.href} {...m} />)}
           </div>
         </div>
