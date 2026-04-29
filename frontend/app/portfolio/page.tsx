@@ -48,6 +48,14 @@ function PortfolioContent() {
   const [techData, setTechData]     = useState<any>(null)
   const [techLoading, setTechLoading] = useState(false)
   const [autoRun, setAutoRun] = useState(false)
+  
+const [isMobile, setIsMobile] = useState(false)
+useEffect(() => {
+  const check = () => setIsMobile(window.innerWidth < 768)
+  check()
+  window.addEventListener('resize', check)
+  return () => window.removeEventListener('resize', check)
+}, [])
 
   const searchParams = useSearchParams()
 
@@ -117,7 +125,7 @@ function PortfolioContent() {
       {/* Inputs */}
       <div style={{ background:'var(--bg2)', border:'1px solid var(--b1)', borderRadius:14, padding:'18px 20px', marginBottom:20 }}>
         <div style={{ fontSize:10, color:'var(--text3)', fontWeight:700, letterSpacing:'1.3px', textTransform:'uppercase', marginBottom:14 }}>Portfolio Inputs</div>
-        <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr 1fr 1fr', gap:12, marginBottom:14 }}>
+        <div style={{ display:'grid', gridTemplateColumns:isMobile?'repeat(2,1fr)':'repeat(4,1fr)', gap:12, marginBottom:20 }}>
           {[
             { label:'Tickers (comma-separated)', key:'tickers', placeholder:'AAPL,MSFT,NVDA' },
             { label:'Shares',                    key:'shares',    placeholder:'20,15,10' },

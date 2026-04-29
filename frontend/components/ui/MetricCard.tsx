@@ -17,14 +17,14 @@ function Spark({ data, up }: { data: number[]; up: boolean }) {
   const max = Math.max(...data)
   const min = Math.min(...data)
   const range = max - min || 1
-  const w = 56, h = 24
+  const w = 44, h = 20
   const points = data.map((v, i) => {
     const x = (i / (data.length - 1)) * w
     const y = h - ((v - min) / range) * h
     return `${x},${y}`
   }).join(' ')
   return (
-    <svg width={w} height={h} style={{ overflow: 'visible' }}>
+    <svg width={w} height={h} style={{ overflow: 'visible', flexShrink: 0 }}>
       <polyline
         points={points}
         fill="none"
@@ -54,11 +54,14 @@ export default function MetricCard({
       background: 'var(--bg3)',
       border: `1px solid ${accent ? `${accent}30` : 'var(--b1)'}`,
       borderRadius: 13,
-      padding: '16px 18px',
+      // ── Key fix: enough padding but not too cramped on mobile ──
+      padding: '14px 14px 12px',
       transition: 'border-color 0.15s, transform 0.15s, box-shadow 0.15s',
       cursor: 'default',
       position: 'relative',
       overflow: 'hidden',
+      // Ensure the card never shrinks content below readable size
+      minWidth: 0,
     }}
     onMouseEnter={e => {
       const el = e.currentTarget as HTMLElement
@@ -82,38 +85,66 @@ export default function MetricCard({
         }} />
       )}
 
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+      {/* Label row */}
+      <div style={{
+        display: 'flex', alignItems: 'flex-start',
+        justifyContent: 'space-between', gap: 6, marginBottom: 8,
+      }}>
         <div style={{
-          fontSize: 10.5, color: 'var(--text2)', fontWeight: 500,
-          letterSpacing: '0.5px', textTransform: 'uppercase',
-          marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6,
+          fontSize: 9.5,
+          color: 'var(--text2)',
+          fontWeight: 600,
+          letterSpacing: '0.4px',
+          textTransform: 'uppercase',
+          lineHeight: 1.3,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 5,
+          // Allow label to wrap rather than overflow
+          flexWrap: 'wrap',
+          minWidth: 0,
         }}>
-          {icon && <span style={{ opacity: 0.7 }}>{icon}</span>}
+          {icon && <span style={{ opacity: 0.7, flexShrink: 0 }}>{icon}</span>}
           {label}
         </div>
         {sparkData && <Spark data={sparkData} up={deltaUp !== false} />}
       </div>
 
+      {/* Value — key fix: use clamp so it scales down gracefully */}
       <div style={{
-        fontFamily: 'var(--fm)', fontSize: 26, fontWeight: 300,
-        color: 'var(--text)', letterSpacing: '-1px', lineHeight: 1,
-        marginBottom: 8,
+        fontFamily: 'var(--fm)',
+        // clamp(18px, 5vw, 26px) — shrinks on very narrow cards
+        fontSize: 'clamp(18px, 4.5vw, 26px)',
+        fontWeight: 300,
+        color: 'var(--text)',
+        letterSpacing: '-0.8px',
+        lineHeight: 1,
+        marginBottom: 7,
+        // Prevent overflow — truncate with ellipsis as last resort
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
       }}>
         {value}
       </div>
 
       {delta && (
         <div style={{
-          display: 'flex', alignItems: 'center', gap: 5,
-          fontSize: 11.5, color: deltaColor,
+          display: 'flex', alignItems: 'center', gap: 4,
+          fontSize: 11, color: deltaColor,
+          // Also allow wrapping on very small cards
+          flexWrap: 'wrap',
         }}>
-          <DeltaIcon size={11} strokeWidth={2} />
-          {delta}
+          <DeltaIcon size={10} strokeWidth={2} style={{ flexShrink: 0 }} />
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{delta}</span>
         </div>
       )}
 
       {sub && !delta && (
-        <div style={{ fontSize: 11, color: 'var(--text3)' }}>{sub}</div>
+        <div style={{
+          fontSize: 10.5, color: 'var(--text3)',
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        }}>{sub}</div>
       )}
     </div>
   )
