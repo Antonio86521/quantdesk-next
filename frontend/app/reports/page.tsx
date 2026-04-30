@@ -1,186 +1,105 @@
 'use client'
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { Plus, FolderOpen, Trash2, Edit3, TrendingUp, Copy, ChevronRight, X, Check, Loader } from 'lucide-react'
-import Badge from '@/components/ui/Badge'
+import { api } from '@/lib/api'
+import { FileText, Download } from 'lucide-react'
 import SectionHeader from '@/components/ui/SectionHeader'
-import ProtectedRoute from '@/components/auth/ProtectedRoute'
-import dynamic from 'next/dynamic'
-const CSVImport = dynamic(() => import('@/components/CSVImport'), { ssr: false })
-import { useAuth } from '@/context/AuthContext'
-import { portfolioDb } from '@/lib/db'
-import type { Portfolio } from '@/lib/supabase'
 
-const STRATEGIES = ['Long Only','Long/Short','Momentum','Value','Dividend Income','Growth','Index Tracking','Options Overlay']
-const COLORS = ['#2d7ff9','#7c5cfc','#0dcb7d','#f0a500','#f54060','#00c9a7','#e05c3a','#e83e8c']
+const REPORT_TYPES = [
+  { id:'portfolio', icon:'📈', name:'Portfolio Report',   desc:'Full performance, holdings, attribution and risk metrics.', color:'var(--accent2)', bg:'rgba(45,127,249,0.1)' },
+  { id:'risk',      icon:'⚡', name:'Risk Digest',        desc:'VaR, CVaR, drawdown, stress tests and factor exposures.',   color:'var(--red)',     bg:'rgba(245,64,96,0.1)' },
+  { id:'macro',     icon:'🌍', name:'Macro Snapshot',     desc:'Cross-asset overview, yield curves and regime analysis.',   color:'var(--purple)',  bg:'rgba(124,92,252,0.1)' },
+  { id:'technical', icon:'📊', name:'Technical Analysis', desc:'Price charts, RSI, MACD and Bollinger band signals.',       color:'var(--teal)',    bg:'rgba(0,201,167,0.1)' },
+]
 
-type Holding = { ticker: string; shares: string; buyPrice: string }
+const DEFAULT = { tickers:'AAPL,MSFT,NVDA,GOOGL,SPY', shares:'20,15,10,25,50', buyPrices:'182,380,650,160,490', period:'1y', benchmark:'SPY' }
 
-function PortfolioCard({ portfolio, onEdit, onDelete, onDuplicate, isMobile }: {
-  portfolio: Portfolio; onEdit: (p: Portfolio) => void
-  onDelete: (id: string) => void; onDuplicate: (p: Portfolio) => void
-  isMobile: boolean
-}) {
-  const totalCost = portfolio.holdings.reduce((s,h) => s+(+h.shares*+h.buyPrice), 0)
-  return (
-    <div style={{ background:'var(--bg2)', border:'1px solid var(--b1)', borderRadius:16, overflow:'hidden', transition:'all 0.2s', position:'relative' }}
-      onMouseEnter={e=>{const el=e.currentTarget as HTMLElement;el.style.borderColor=portfolio.color+'44';el.style.transform='translateY(-2px)';el.style.boxShadow='0 12px 40px rgba(0,0,0,0.4)'}}
-      onMouseLeave={e=>{const el=e.currentTarget as HTMLElement;el.style.borderColor='var(--b1)';el.style.transform='translateY(0)';el.style.boxShadow='none'}}
-    >
-      <div style={{ height:3, background:`linear-gradient(90deg,${portfolio.color},${portfolio.color}88)` }}/>
-      <div style={{ padding:'18px 20px' }}>
-        <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:14, flexWrap:'wrap', gap:8 }}>
-          <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-            <div style={{ width:40, height:40, borderRadius:10, flexShrink:0, background:portfolio.color+'18', border:`1px solid ${portfolio.color}30`, display:'flex', alignItems:'center', justifyContent:'center' }}>
-              <FolderOpen size={18} color={portfolio.color} strokeWidth={1.5}/>
-            </div>
-            <div>
-              <div style={{ fontFamily:'var(--fd)', fontSize:15, fontWeight:700, marginBottom:3 }}>{portfolio.name}</div>
-              <div style={{ fontSize:11, color:'var(--text3)' }}>Created {portfolio.created_at?.slice(0,10)}</div>
-            </div>
-          </div>
-          <Badge variant={portfolio.strategy==='Growth'?'blue':portfolio.strategy==='Momentum'?'purple':portfolio.strategy==='Dividend Income'?'green':'amber'}>{portfolio.strategy}</Badge>
+function fmtPct(v: any) { return v==null?'—':`${(v*100).toFixed(2)}%` }
+function fmtNum(v: any, d=2) { return v==null?'—':Number(v).toFixed(d) }
+function fmtDollar(v: any) { return v==null?'—':v>=1e6?`$${(v/1e6).toFixed(2)}M`:v>=1e3?`$${v.toLocaleString('en',{maximumFractionDigits:0})}`:`$${Number(v).toFixed(2)}` }
+function fmtPlus(v: any) { return v==null?'—':`${v>=0?'+':''}${(v*100).toFixed(2)}%` }
+
+function buildHTML(sections: string[], data: any, market: any[], tickers: string, period: string) {
+  const s = data?.summary
+  const h = data?.holdings || []
+  const now = new Date().toLocaleDateString('en-GB', { year:'numeric', month:'long', day:'numeric' })
+  const sectionHTML: string[] = []
+
+  if (sections.includes('portfolio') && s) {
+    sectionHTML.push(`
+      <section>
+        <h2>Portfolio Performance</h2>
+        <div class="metrics-grid">
+          <div class="metric"><div class="metric-label">Portfolio Value</div><div class="metric-value">${fmtDollar(s.totalValue)}</div></div>
+          <div class="metric"><div class="metric-label">Total Return</div><div class="metric-value ${s.totalReturn>=0?'pos':'neg'}">${fmtPlus(s.totalReturn)}</div></div>
+          <div class="metric"><div class="metric-label">Ann. Return</div><div class="metric-value ${s.annReturn>=0?'pos':'neg'}">${fmtPlus(s.annReturn)}</div></div>
+          <div class="metric"><div class="metric-label">Sharpe Ratio</div><div class="metric-value ${s.sharpe>1?'pos':''}">${fmtNum(s.sharpe)}</div></div>
         </div>
-
-        {portfolio.description && <div style={{ fontSize:12.5, color:'var(--text2)', marginBottom:14, lineHeight:1.55 }}>{portfolio.description}</div>}
-
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:1, background:'var(--b1)', borderRadius:10, overflow:'hidden', marginBottom:14 }}>
-          {[
-            { label:'Positions', value:String(portfolio.holdings.length) },
-            { label:'Total Cost', value:totalCost>=1e6?`$${(totalCost/1e6).toFixed(2)}M`:`$${totalCost.toLocaleString('en',{maximumFractionDigits:0})}` },
-            { label:'Avg Size',   value:portfolio.holdings.length?`$${(totalCost/portfolio.holdings.length).toLocaleString('en',{maximumFractionDigits:0})}`:'—' },
-          ].map(({ label, value }) => (
-            <div key={label} style={{ background:'var(--bg3)', padding:'10px 12px', textAlign:'center' }}>
-              <div style={{ fontSize:9.5, color:'var(--text3)', textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:5 }}>{label}</div>
-              <div style={{ fontFamily:'var(--fm)', fontSize:15, fontWeight:300 }}>{value}</div>
-            </div>
-          ))}
-        </div>
-
-        <div style={{ display:'flex', flexDirection:'column', gap:5, marginBottom:16 }}>
-          {portfolio.holdings.map((h,i) => (
-            <div key={i} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'6px 10px', background:'var(--bg3)', borderRadius:7, border:'1px solid rgba(255,255,255,0.03)' }}>
-              <span style={{ fontFamily:'var(--fm)', fontSize:12, fontWeight:600, color:portfolio.color }}>{h.ticker}</span>
-              <span style={{ fontSize:11.5, color:'var(--text2)' }}>{h.shares} @ ${h.buyPrice}</span>
-              <span style={{ fontFamily:'var(--fm)', fontSize:11.5 }}>${(+h.shares*+h.buyPrice).toLocaleString('en',{maximumFractionDigits:0})}</span>
-            </div>
-          ))}
-        </div>
-
-        <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-          <Link href={`/portfolio?tickers=${portfolio.holdings.map(h=>h.ticker).join(',')}&shares=${portfolio.holdings.map(h=>h.shares).join(',')}&buyPrices=${portfolio.holdings.map(h=>h.buyPrice).join(',')}`}
-            style={{ flex:1, padding:'9px 12px', borderRadius:9, textAlign:'center', background:`linear-gradient(135deg,${portfolio.color}22,${portfolio.color}11)`, border:`1px solid ${portfolio.color}33`, color:portfolio.color, fontSize:12.5, fontWeight:600, textDecoration:'none', transition:'all 0.15s', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
-            <TrendingUp size={13} strokeWidth={2}/> Analyse
-          </Link>
-          <button onClick={()=>onDuplicate(portfolio)} style={{ padding:'9px 11px', borderRadius:9, background:'transparent', border:'1px solid var(--b1)', color:'var(--text3)', cursor:'pointer' }}><Copy size={13}/></button>
-          <button onClick={()=>onEdit(portfolio)} style={{ padding:'9px 11px', borderRadius:9, background:'transparent', border:'1px solid var(--b1)', color:'var(--text3)', cursor:'pointer' }}><Edit3 size={13}/></button>
-          <button onClick={()=>onDelete(portfolio.id)} style={{ padding:'9px 11px', borderRadius:9, background:'transparent', border:'1px solid var(--b1)', color:'var(--text3)', cursor:'pointer' }}><Trash2 size={13}/></button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function PortfolioForm({ initial, onSave, onClose, saving, isMobile }: {
-  initial?: Portfolio|null; onSave: (data:any)=>void; onClose:()=>void; saving:boolean; isMobile:boolean
-}) {
-  const [name,setName]=useState(initial?.name||'')
-  const [desc,setDesc]=useState(initial?.description||'')
-  const [strategy,setStrategy]=useState(initial?.strategy||STRATEGIES[0])
-  const [color,setColor]=useState(initial?.color||COLORS[0])
-  const [holdings,setHoldings]=useState<Holding[]>(initial?.holdings||[{ticker:'',shares:'',buyPrice:''}])
-
-  const addRow=()=>setHoldings(h=>[...h,{ticker:'',shares:'',buyPrice:''}])
-  const removeRow=(i:number)=>setHoldings(h=>h.filter((_,idx)=>idx!==i))
-  const updateRow=(i:number,field:keyof Holding,val:string)=>setHoldings(h=>h.map((r,idx)=>idx===i?{...r,[field]:val}:r))
-
-  const save=()=>{
-    if(!name.trim())return
-    const valid=holdings.filter(h=>h.ticker&&h.shares&&h.buyPrice)
-    if(!valid.length)return
-    onSave({name,description:desc,strategy,color,holdings:valid})
+        <h3>Holdings</h3>
+        <table>
+          <thead><tr><th>Ticker</th><th>Shares</th><th>Value</th><th>P&L</th><th>Weight</th><th>Return</th></tr></thead>
+          <tbody>${h.map((hh:any)=>`<tr><td><strong>${hh.ticker}</strong></td><td>${hh.shares}</td><td>${fmtDollar(hh.marketValue)}</td><td class="${hh.unrealisedPnl>=0?'pos':'neg'}">${fmtDollar(hh.unrealisedPnl)}</td><td>${(hh.weight*100).toFixed(1)}%</td><td class="${hh.periodReturn>=0?'pos':'neg'}">${fmtPlus(hh.periodReturn)}</td></tr>`).join('')}</tbody>
+        </table>
+      </section>`)
   }
 
-  return (
-    <div style={{ position:'fixed', inset:0, zIndex:1000, background:'rgba(0,0,0,0.7)', backdropFilter:'blur(6px)', display:'flex', alignItems:'center', justifyContent:'center', padding: isMobile?12:20 }}>
-      <div style={{ background:'var(--bg2)', border:'1px solid var(--b2)', borderRadius:18, padding: isMobile?'16px 16px':'24px 28px', width:'100%', maxWidth:680, maxHeight:'90vh', overflowY:'auto', boxShadow:'0 24px 80px rgba(0,0,0,0.6)' }}>
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
-          <div style={{ fontFamily:'var(--fd)', fontSize:17, fontWeight:700 }}>{initial?'Edit Portfolio':'New Portfolio'}</div>
-          <button onClick={onClose} style={{ background:'transparent', border:'none', cursor:'pointer', color:'var(--text2)' }}><X size={18}/></button>
+  if (sections.includes('risk') && s) {
+    sectionHTML.push(`
+      <section>
+        <h2>Risk Analysis</h2>
+        <div class="metrics-grid">
+          <div class="metric"><div class="metric-label">Historical VaR 95%</div><div class="metric-value neg">${fmtPct(s.histVar95)}</div></div>
+          <div class="metric"><div class="metric-label">CVaR / ES 95%</div><div class="metric-value neg">${fmtPct(s.histCVar95)}</div></div>
+          <div class="metric"><div class="metric-label">Max Drawdown</div><div class="metric-value neg">${fmtPct(s.maxDrawdown)}</div></div>
+          <div class="metric"><div class="metric-label">Beta</div><div class="metric-value">${fmtNum(s.beta)}</div></div>
         </div>
+      </section>`)
+  }
 
-        <div style={{ display:'grid', gridTemplateColumns: isMobile?'1fr':'1fr 1fr', gap:14, marginBottom:14 }}>
-          <div>
-            <div style={{ fontSize:10.5, color:'var(--text2)', marginBottom:5, fontWeight:500 }}>Portfolio Name *</div>
-            <input className="qd-input" value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Core Growth"/>
-          </div>
-          <div>
-            <div style={{ fontSize:10.5, color:'var(--text2)', marginBottom:5, fontWeight:500 }}>Strategy</div>
-            <select className="qd-select" style={{ width:'100%' }} value={strategy} onChange={e=>setStrategy(e.target.value)}>
-              {STRATEGIES.map(s=><option key={s}>{s}</option>)}
-            </select>
-          </div>
-        </div>
+  if (sections.includes('macro') && market.length > 0) {
+    sectionHTML.push(`
+      <section>
+        <h2>Macro Snapshot</h2>
+        <table>
+          <thead><tr><th>Asset</th><th>Price</th><th>Change</th><th>Direction</th></tr></thead>
+          <tbody>${market.map(m=>`<tr><td><strong>${m.label}</strong></td><td>${m.value}</td><td class="${m.up?'pos':'neg'}">${m.chgStr}</td><td>${m.up?'↑ Rising':'↓ Falling'}</td></tr>`).join('')}</tbody>
+        </table>
+      </section>`)
+  }
 
-        <div style={{ marginBottom:14 }}>
-          <div style={{ fontSize:10.5, color:'var(--text2)', marginBottom:5, fontWeight:500 }}>Description</div>
-          <input className="qd-input" value={desc} onChange={e=>setDesc(e.target.value)} placeholder="Short description"/>
-        </div>
+  if (sections.includes('technical')) {
+    sectionHTML.push(`
+      <section>
+        <h2>Technical Analysis Summary</h2>
+        <p>Technical analysis for: <strong>${tickers}</strong> over <strong>${period}</strong>.</p>
+        <table>
+          <thead><tr><th>Indicator</th><th>Signal</th><th>Interpretation</th></tr></thead>
+          <tbody>
+            <tr><td>RSI (14)</td><td>Above 50</td><td>Bullish momentum</td></tr>
+            <tr><td>MACD</td><td>Positive histogram</td><td>Upward trend</td></tr>
+            <tr><td>SMA 20/50</td><td>Price above both</td><td>Strong uptrend</td></tr>
+          </tbody>
+        </table>
+      </section>`)
+  }
 
-        <div style={{ marginBottom:20 }}>
-          <div style={{ fontSize:10.5, color:'var(--text2)', marginBottom:8, fontWeight:500 }}>Accent Color</div>
-          <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-            {COLORS.map(c=>(
-              <button key={c} onClick={()=>setColor(c)} style={{ width:28, height:28, borderRadius:'50%', background:c, border:'none', cursor:'pointer', boxShadow:color===c?`0 0 0 2px var(--bg2),0 0 0 4px ${c}`:'none', transition:'box-shadow 0.15s' }}/>
-            ))}
-          </div>
-        </div>
-
-        <div style={{ marginBottom:16 }}>
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
-            <div style={{ fontSize:10.5, color:'var(--text2)', fontWeight:500, textTransform:'uppercase', letterSpacing:'0.8px' }}>Holdings *</div>
-            <button onClick={addRow} style={{ display:'flex', alignItems:'center', gap:5, padding:'4px 10px', borderRadius:6, background:'var(--accent3)', border:'1px solid rgba(45,127,249,0.2)', color:'var(--accent2)', fontSize:11.5, fontWeight:600, cursor:'pointer' }}>
-              <Plus size={11}/> Add Row
-            </button>
-          </div>
-          {!isMobile && (
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr auto', gap:8, marginBottom:6 }}>
-              {['Ticker','Shares','Buy Price ($)',''].map((h,i)=>(
-                <div key={i} style={{ fontSize:10, color:'var(--text3)', fontWeight:700, letterSpacing:'0.5px', textTransform:'uppercase', paddingLeft:2 }}>{h}</div>
-              ))}
-            </div>
-          )}
-          {holdings.map((h,i)=>(
-            <div key={i} style={{ display:'grid', gridTemplateColumns: isMobile?'1fr 1fr 1fr auto':'1fr 1fr 1fr auto', gap:8, marginBottom:8 }}>
-              <input className="qd-input" placeholder="AAPL"   value={h.ticker}   onChange={e=>updateRow(i,'ticker',e.target.value.toUpperCase())} style={{ textTransform:'uppercase' }}/>
-              <input className="qd-input" placeholder="20"     value={h.shares}   onChange={e=>updateRow(i,'shares',e.target.value)}/>
-              <input className="qd-input" placeholder="182.00" value={h.buyPrice} onChange={e=>updateRow(i,'buyPrice',e.target.value)}/>
-              <button onClick={()=>removeRow(i)} disabled={holdings.length===1} style={{ padding:'8px', borderRadius:7, background:'transparent', border:'1px solid rgba(245,64,96,0.2)', color:'var(--red)', cursor:'pointer', opacity:holdings.length===1?0.3:1 }}><X size={13}/></button>
-            </div>
-          ))}
-        </div>
-
-        <div style={{ display:'flex', gap:10, justifyContent:'flex-end', flexWrap:'wrap' }}>
-          <button onClick={onClose} style={{ padding:'10px 20px', borderRadius:8, background:'transparent', border:'1px solid var(--b2)', color:'var(--text2)', fontSize:13, fontWeight:500, cursor:'pointer' }}>Cancel</button>
-          <button onClick={save} disabled={saving} style={{ padding:'10px 24px', borderRadius:8, background:`linear-gradient(135deg,${color},${color}bb)`, border:`1px solid ${color}55`, color:'#fff', fontSize:13, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:7 }}>
-            {saving?<><Loader size={13} style={{ animation:'spin 0.8s linear infinite' }}/> Saving...</>:<><Check size={14}/>{initial?'Save Changes':'Create Portfolio'}</>}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>QuantDesk Pro Report</title>
+<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',system-ui,sans-serif;background:#f8fafc;color:#1e293b;padding:40px;font-size:13px}.wrapper{max-width:1000px;margin:0 auto;background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:40px;box-shadow:0 4px 24px rgba(0,0,0,0.06)}.header{border-bottom:2px solid #e2e8f0;padding-bottom:24px;margin-bottom:32px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px}.logo{display:flex;align-items:center;gap:12px}.logo-mark{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#2d7ff9,#7c5cfc);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px}.logo-name{font-size:18px;font-weight:700;color:#0f172a}.logo-sub{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.8px;margin-top:2px}.report-meta{text-align:right}.report-title{font-size:14px;font-weight:600;color:#0f172a}.report-date{font-size:11px;color:#64748b;margin-top:3px}section{margin-bottom:36px}h2{font-size:16px;font-weight:700;color:#0f172a;border-left:3px solid #2d7ff9;padding-left:10px;margin-bottom:16px}h3{font-size:13px;font-weight:600;color:#334155;margin:20px 0 10px}p{color:#475569;line-height:1.7;margin-bottom:10px}.metrics-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}.metric{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px}.metric-label{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}.metric-value{font-size:18px;font-weight:300;color:#0f172a;font-family:'Courier New',monospace}table{width:100%;border-collapse:collapse;margin-top:8px}th{text-align:left;padding:8px 12px;font-size:10px;color:#64748b;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;border-bottom:1px solid #e2e8f0;background:#f8fafc}td{padding:10px 12px;border-bottom:1px solid #f1f5f9;font-size:12.5px}tr:last-child td{border-bottom:none}.pos{color:#059669}.neg{color:#dc2626}.footer{margin-top:40px;padding-top:16px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;font-size:11px;color:#94a3b8;flex-wrap:wrap;gap:8px}@media(max-width:600px){.metrics-grid{grid-template-columns:repeat(2,1fr)}.header{flex-direction:column}.report-meta{text-align:left}}@media print{body{padding:0;background:white}.wrapper{border:none;box-shadow:none;padding:20px}}</style>
+</head><body><div class="wrapper">
+  <div class="header">
+    <div class="logo"><div class="logo-mark">QD</div><div><div class="logo-name">QuantDesk Pro</div><div class="logo-sub">Portfolio Intelligence</div></div></div>
+    <div class="report-meta"><div class="report-title">Portfolio Analysis Report</div><div class="report-date">Generated: ${now}</div><div class="report-date">Period: ${period} · Benchmark: ${s?.benchmark||'SPY'}</div></div>
+  </div>
+  ${sectionHTML.join('\n')}
+  <div class="footer"><div>© 2026 QuantDesk Pro — Educational use only</div><div>Not investment advice · Data via yfinance</div></div>
+</div></body></html>`
 }
 
-function ManagerContent() {
-  const { user } = useAuth()
-  const [portfolios,setPortfolios]=useState<Portfolio[]>([])
-  const [loading,setLoading]=useState(true)
-  const [saving,setSaving]=useState(false)
-  const [showForm,setShowForm]=useState(false)
-  const [showCSV,setShowCSV]=useState(false)
-  const [editTarget,setEditTarget]=useState<Portfolio|null>(null)
-  const [search,setSearch]=useState('')
-  const [error,setError]=useState('')
+export default function ReportsPage() {
+  const [selected,setSelected]=useState<string[]>([])
+  const [inputs,setInputs]=useState(DEFAULT)
+  const [loading,setLoading]=useState(false)
+  const [generated,setGenerated]=useState(false)
+  const [reportHTML,setReportHTML]=useState('')
   const [isMobile,setIsMobile]=useState(false)
 
   useEffect(()=>{
@@ -189,156 +108,124 @@ function ManagerContent() {
     return ()=>window.removeEventListener('resize',check)
   },[])
 
-  useEffect(()=>{ if(user) load() },[user])
+  const toggle=(id:string)=>setSelected(s=>s.includes(id)?s.filter(x=>x!==id):[...s,id])
 
-  const load=async()=>{
-    if(!user)return; setLoading(true)
-    try { setPortfolios(await portfolioDb.getAll(user.id)) }
-    catch(e:any){ setError(e.message) }
+  const generate=async()=>{
+    if(!selected.length)return; setLoading(true)
+    try {
+      let portfolioData=null; let marketData:any[]=[]
+      if(selected.includes('portfolio')||selected.includes('risk')){
+        portfolioData=await api.portfolio.analytics({ tickers:inputs.tickers, shares:inputs.shares, buyPrices:inputs.buyPrices, period:inputs.period, benchmark:inputs.benchmark })
+      }
+      if(selected.includes('macro')){ const snap=await api.market.snapshot(); marketData=snap.data||[] }
+      const html=buildHTML(selected,portfolioData,marketData,inputs.tickers,inputs.period)
+      setReportHTML(html); setGenerated(true)
+    } catch(e){ console.error(e) }
     finally { setLoading(false) }
   }
 
-  const handleSave=async(data:any)=>{
-    if(!user)return; setSaving(true)
-    try {
-      if(editTarget){
-        const updated=await portfolioDb.update(editTarget.id,data)
-        setPortfolios(ps=>ps.map(p=>p.id===editTarget.id?updated:p))
-      } else {
-        const created=await portfolioDb.create(user.id,data)
-        setPortfolios(ps=>[created,...ps])
-      }
-      setShowForm(false); setEditTarget(null)
-    } catch(e:any){ setError(e.message) }
-    finally { setSaving(false) }
+  const downloadHTML=()=>{
+    const blob=new Blob([reportHTML],{type:'text/html'})
+    const url=URL.createObjectURL(blob)
+    const a=document.createElement('a'); a.href=url; a.download=`quantdesk-report-${new Date().toISOString().slice(0,10)}.html`; a.click()
+    URL.revokeObjectURL(url)
   }
 
-  const handleDelete=async(id:string)=>{
-    if(!confirm('Delete this portfolio?'))return
-    try { await portfolioDb.delete(id); setPortfolios(ps=>ps.filter(p=>p.id!==id)) }
-    catch(e:any){ setError(e.message) }
-  }
-
-  const handleDuplicate=async(p:Portfolio)=>{
-    if(!user)return
-    try {
-      const created=await portfolioDb.create(user.id,{ name:`${p.name} (Copy)`, description:p.description, strategy:p.strategy, color:p.color, holdings:p.holdings })
-      setPortfolios(ps=>[created,...ps])
-    } catch(e:any){ setError(e.message) }
-  }
-
-  const filtered=portfolios.filter(p=>
-    p.name.toLowerCase().includes(search.toLowerCase())||
-    p.strategy?.toLowerCase().includes(search.toLowerCase())||
-    p.holdings?.some(h=>h.ticker.toLowerCase().includes(search.toLowerCase()))
-  )
-
-  const totalValue=portfolios.reduce((s,p)=>s+p.holdings.reduce((hs,h)=>hs+(+h.shares*+h.buyPrice),0),0)
+  const printPDF=()=>{ const win=window.open('','_blank'); if(!win)return; win.document.write(reportHTML); win.document.close(); setTimeout(()=>win.print(),500) }
+  const preview=()=>{ const win=window.open('','_blank'); if(!win)return; win.document.write(reportHTML); win.document.close() }
 
   return (
     <div style={{ padding: isMobile?'0 14px 80px':'0 28px 52px' }}>
-      {showCSV && <CSVImport
-        onImport={async(name,holdings)=>{
-          if(!user)return
-          try {
-            const created=await portfolioDb.create(user.id,{name,description:'Imported from CSV',strategy:'Long Only',color:'#0dcb7d',holdings})
-            setPortfolios(ps=>[created,...ps])
-          } catch(e:any){ setError(e.message) }
-          setShowCSV(false)
-        }}
-        onClose={()=>setShowCSV(false)}
-      />}
-      {showForm && <PortfolioForm initial={editTarget} onSave={handleSave} onClose={()=>{setShowForm(false);setEditTarget(null)}} saving={saving} isMobile={isMobile}/>}
+      <div style={{ margin:'24px 0 20px' }}>
+        <h1 style={{ fontSize: isMobile?20:24, fontWeight:700, letterSpacing:'-0.5px', marginBottom:5 }}>Report Generator</h1>
+        <div style={{ fontSize:13, color:'var(--text2)' }}>Generate professional reports · Download HTML · Print to PDF</div>
+      </div>
 
-      <div style={{ margin:'24px 0 20px', display:'flex', alignItems:'flex-start', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
-        <div>
-          <h1 style={{ fontSize: isMobile?20:24, fontWeight:700, letterSpacing:'-0.5px', marginBottom:5 }}>Portfolio Manager</h1>
-          <div style={{ fontSize:13, color:'var(--text2)' }}>Create · Edit · Analyse · All saved to your account</div>
-        </div>
-        <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-          <button onClick={()=>setShowCSV(true)} style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 18px', borderRadius:9, background:'rgba(13,203,125,0.1)', border:'1px solid rgba(13,203,125,0.25)', color:'var(--green)', fontSize:13, fontWeight:600, cursor:'pointer' }}>
-            📂 {isMobile?'Import':'Import CSV'}
-          </button>
-          <button onClick={()=>{setEditTarget(null);setShowForm(true)}} style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 20px', borderRadius:9, background:'linear-gradient(135deg,#2d7ff9,#1a6de0)', border:'1px solid rgba(45,127,249,0.4)', color:'#fff', fontSize:13, fontWeight:600, cursor:'pointer', boxShadow:'0 0 20px rgba(45,127,249,0.25)' }}>
-            <Plus size={14} strokeWidth={2.5}/> {isMobile?'New':'New Portfolio'}
-          </button>
+      {/* Portfolio inputs — stacked on mobile */}
+      <div style={{ background:'var(--bg2)', border:'1px solid var(--b1)', borderRadius:14, padding:'18px 20px', marginBottom:20 }}>
+        <div style={{ fontSize:10, color:'var(--text3)', fontWeight:700, letterSpacing:'1.3px', textTransform:'uppercase', marginBottom:14 }}>Portfolio Data</div>
+        <div style={{ display:'grid', gridTemplateColumns: isMobile?'1fr':'2fr 1fr 1fr auto auto', gap:12, alignItems:'flex-end' }}>
+          {[['Tickers','tickers'],['Shares','shares'],['Buy Prices ($)','buyPrices']].map(([l,k])=>(
+            <div key={k}>
+              <div style={{ fontSize:10.5, color:'var(--text2)', marginBottom:5 }}>{l}</div>
+              <input className="qd-input" value={(inputs as any)[k]} onChange={e=>setInputs(x=>({...x,[k]:e.target.value}))}/>
+            </div>
+          ))}
+          <div>
+            <div style={{ fontSize:10.5, color:'var(--text2)', marginBottom:5 }}>Period</div>
+            <select className="qd-select" value={inputs.period} onChange={e=>setInputs(x=>({...x,period:e.target.value}))}>
+              {['1mo','3mo','6mo','1y','2y'].map(o=><option key={o}>{o}</option>)}
+            </select>
+          </div>
+          <div>
+            <div style={{ fontSize:10.5, color:'var(--text2)', marginBottom:5 }}>Benchmark</div>
+            <select className="qd-select" value={inputs.benchmark} onChange={e=>setInputs(x=>({...x,benchmark:e.target.value}))}>
+              {['SPY','QQQ','DIA','IWM'].map(o=><option key={o}>{o}</option>)}
+            </select>
+          </div>
         </div>
       </div>
 
-      {error && <div style={{ marginBottom:16, background:'rgba(245,64,96,0.08)', border:'1px solid rgba(245,64,96,0.2)', borderRadius:10, padding:'10px 14px', fontSize:12.5, color:'var(--red)' }}>{error}</div>}
-
-      {/* Summary strip — 2-col on mobile, 4-col on desktop */}
-      <div style={{ display:'grid', gridTemplateColumns: isMobile?'repeat(2,1fr)':'repeat(4,1fr)', border:'1px solid var(--b1)', borderRadius:14, overflow:'hidden', marginBottom:24 }}>
-        {[
-          { label:'Portfolios',     value:String(portfolios.length),     color:'var(--accent2)' },
-          { label:'Total Positions', value:String(portfolios.reduce((s,p)=>s+p.holdings.length,0)), color:'var(--text)' },
-          { label:'Total Invested',  value:totalValue>=1e6?`$${(totalValue/1e6).toFixed(2)}M`:`$${totalValue.toLocaleString('en',{maximumFractionDigits:0})}`, color:'var(--green)' },
-          { label:'Unique Tickers',  value:String(new Set(portfolios.flatMap(p=>p.holdings.map(h=>h.ticker))).size), color:'var(--purple)' },
-        ].map(({ label, value, color }, i) => (
-          <div key={i} style={{ padding:'16px 20px', background:'var(--bg2)', borderRight: isMobile?(i%2===0?'1px solid rgba(255,255,255,0.04)':'none'):(i<3?'1px solid rgba(255,255,255,0.04)':'none'), borderBottom: isMobile&&i<2?'1px solid rgba(255,255,255,0.04)':'none' }}>
-            <div style={{ fontSize:9, color:'var(--text3)', textTransform:'uppercase', letterSpacing:'1px', fontWeight:700, marginBottom:8 }}>{label}</div>
-            <div style={{ fontFamily:'var(--fm)', fontSize: isMobile?18:22, fontWeight:300, color, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{value}</div>
+      {/* Section selector — 1-col on mobile, 2-col on desktop */}
+      <SectionHeader title="Select Report Sections"/>
+      <div style={{ display:'grid', gridTemplateColumns: isMobile?'1fr':'repeat(2,1fr)', gap:12, marginBottom:24 }}>
+        {REPORT_TYPES.map(r=>(
+          <div key={r.id} onClick={()=>toggle(r.id)} style={{ background:selected.includes(r.id)?r.bg:'var(--bg2)', border:`1px solid ${selected.includes(r.id)?r.color+'44':'var(--b1)'}`, borderRadius:14, padding:'18px 20px', cursor:'pointer', transition:'all 0.15s' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:14 }}>
+              <div style={{ width:44, height:44, borderRadius:11, background:r.bg, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, flexShrink:0 }}>{r.icon}</div>
+              <div style={{ flex:1 }}>
+                <div style={{ fontFamily:'var(--fd)', fontSize:14, fontWeight:700, marginBottom:4 }}>{r.name}</div>
+                <div style={{ fontSize:12, color:'var(--text2)' }}>{r.desc}</div>
+              </div>
+              <div style={{ width:20, height:20, borderRadius:'50%', flexShrink:0, border:`2px solid ${selected.includes(r.id)?r.color:'var(--b2)'}`, background:selected.includes(r.id)?r.color:'transparent', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                {selected.includes(r.id)&&<span style={{ color:'#fff', fontSize:11, fontWeight:700 }}>✓</span>}
+              </div>
+            </div>
           </div>
         ))}
       </div>
 
-      <div style={{ marginBottom:20 }}>
-        <input className="qd-input" placeholder="Search portfolios..." value={search} onChange={e=>setSearch(e.target.value)} style={{ maxWidth:380 }}/>
+      {/* Actions */}
+      <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
+        <button onClick={generate} disabled={!selected.length||loading} style={{ padding:'10px 24px', borderRadius:8, cursor:selected.length&&!loading?'pointer':'not-allowed', background:selected.length&&!loading?'linear-gradient(135deg,#2d7ff9,#1a6de0)':'var(--bg4)', border:'1px solid rgba(45,127,249,0.4)', color:'#fff', fontSize:13, fontWeight:600, display:'flex', alignItems:'center', gap:8 }}>
+          {loading?<><span style={{ width:13,height:13,border:'2px solid rgba(255,255,255,0.3)',borderTop:'2px solid #fff',borderRadius:'50%',display:'inline-block',animation:'spin 0.8s linear infinite' }}/> Generating...</>:<><FileText size={14}/> Generate Report</>}
+        </button>
+        {generated && (<>
+          <button onClick={downloadHTML} style={{ padding:'10px 20px', borderRadius:8, background:'var(--bg3)', border:'1px solid var(--b2)', color:'var(--text)', fontSize:13, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:8 }}>
+            <Download size={14}/> Download HTML
+          </button>
+          <button onClick={printPDF} style={{ padding:'10px 20px', borderRadius:8, background:'var(--bg3)', border:'1px solid var(--b2)', color:'var(--text)', fontSize:13, fontWeight:600, cursor:'pointer' }}>
+            🖨 Print / PDF
+          </button>
+          <button onClick={preview} style={{ padding:'10px 20px', borderRadius:8, background:'var(--bg3)', border:'1px solid var(--b2)', color:'var(--text)', fontSize:13, fontWeight:600, cursor:'pointer' }}>
+            👁 Preview
+          </button>
+        </>)}
       </div>
 
-      {loading ? (
-        <div style={{ display:'grid', gridTemplateColumns: isMobile?'1fr':'repeat(3,1fr)', gap:16 }}>
-          {[1,2,3].map(i=><div key={i} style={{ height:280, borderRadius:14 }} className="skeleton"/>)}
-        </div>
-      ) : filtered.length===0 ? (
-        <div style={{ background:'var(--bg2)', border:'1px solid var(--b1)', borderRadius:14, padding:52, textAlign:'center' }}>
-          <div style={{ fontSize:32, marginBottom:12, opacity:0.4 }}>💼</div>
-          <div style={{ fontFamily:'var(--fd)', fontSize:16, fontWeight:600, marginBottom:8 }}>{search?'No portfolios match':'No portfolios yet'}</div>
-          <div style={{ fontSize:13, color:'var(--text2)', maxWidth:380, margin:'0 auto 20px' }}>{search?'Try a different search.':'Create your first portfolio — it will be saved to your account.'}</div>
-          {!search && <button onClick={()=>setShowForm(true)} style={{ padding:'10px 24px', borderRadius:8, background:'linear-gradient(135deg,#2d7ff9,#1a6de0)', border:'1px solid rgba(45,127,249,0.4)', color:'#fff', fontSize:13, fontWeight:600, cursor:'pointer' }}>Create First Portfolio</button>}
-        </div>
-      ) : (
-        // 1-col on mobile, 3-col on desktop
-        <div style={{ display:'grid', gridTemplateColumns: isMobile?'1fr':'repeat(3,1fr)', gap:16 }}>
-          {filtered.map(p=>(
-            <PortfolioCard key={p.id} portfolio={p} isMobile={isMobile}
-              onEdit={p=>{setEditTarget(p);setShowForm(true)}}
-              onDelete={handleDelete}
-              onDuplicate={handleDuplicate}
-            />
-          ))}
+      {generated && (
+        <div style={{ marginTop:16, background:'rgba(13,203,125,0.08)', border:'1px solid rgba(13,203,125,0.2)', borderRadius:12, padding:'14px 18px', display:'flex', alignItems:'center', gap:12 }}>
+          <span style={{ fontSize:20 }}>✅</span>
+          <div>
+            <div style={{ fontWeight:600, marginBottom:3 }}>Report generated successfully</div>
+            <div style={{ fontSize:12.5, color:'var(--text2)' }}>Sections: {selected.map(s=>REPORT_TYPES.find(r=>r.id===s)?.name).join(' · ')}</div>
+            <div style={{ fontSize:12, color:'var(--text3)', marginTop:3 }}>Click <strong>Print / PDF</strong> → Save as PDF in your browser's print dialog</div>
+          </div>
         </div>
       )}
 
-      {portfolios.length>=2 && (<>
-        <SectionHeader title="Quick Compare"/>
-        <div style={{ background:'var(--bg2)', border:'1px solid var(--b1)', borderRadius:14, overflow:'hidden' }}>
-          <div style={{ overflowX:'auto', WebkitOverflowScrolling:'touch' }}>
-            <table className="qd-table" style={{ minWidth: isMobile?600:'auto' }}>
-              <thead><tr><th>Portfolio</th><th>Strategy</th><th>Positions</th><th>Total Cost</th><th>Tickers</th><th>Action</th></tr></thead>
-              <tbody>
-                {portfolios.map(p=>{
-                  const cost=p.holdings.reduce((s,h)=>s+(+h.shares*+h.buyPrice),0)
-                  return (
-                    <tr key={p.id}>
-                      <td><div style={{ display:'flex', alignItems:'center', gap:8 }}><div style={{ width:8,height:8,borderRadius:'50%',background:p.color,flexShrink:0 }}/><span style={{ fontWeight:600 }}>{p.name}</span></div></td>
-                      <td><Badge variant={p.strategy==='Growth'?'blue':p.strategy==='Momentum'?'purple':'green'}>{p.strategy}</Badge></td>
-                      <td className="mono">{p.holdings.length}</td>
-                      <td className="mono">{cost>=1e6?`$${(cost/1e6).toFixed(2)}M`:`$${cost.toLocaleString('en',{maximumFractionDigits:0})}`}</td>
-                      <td style={{ color:'var(--text3)', fontSize:11, fontFamily:'var(--fm)' }}>{p.holdings.map(h=>h.ticker).join(', ')}</td>
-                      <td><Link href={`/portfolio?tickers=${p.holdings.map(h=>h.ticker).join(',')}&shares=${p.holdings.map(h=>h.shares).join(',')}&buyPrices=${p.holdings.map(h=>h.buyPrice).join(',')}`} style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:12, color:'var(--accent2)', fontWeight:600, textDecoration:'none' }}>Analyse <ChevronRight size={11}/></Link></td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+      {/* Instructions */}
+      <div style={{ marginTop:24, background:'var(--bg2)', border:'1px solid var(--b1)', borderRadius:14, padding:'16px 20px' }}>
+        <div style={{ fontFamily:'var(--fd)', fontSize:13, fontWeight:700, marginBottom:10 }}>How to save as PDF</div>
+        <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+          {['1. Select your report sections above','2. Click Generate Report','3. Click Print / Save PDF — browser print dialog opens','4. Choose "Save as PDF" as the destination','5. Click Save'].map((step,i)=>(
+            <div key={i} style={{ display:'flex', alignItems:'center', gap:10 }}>
+              <div style={{ width:20, height:20, borderRadius:'50%', background:'var(--accent3)', border:'1px solid rgba(45,127,249,0.2)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:700, color:'var(--accent2)', flexShrink:0 }}>{i+1}</div>
+              <div style={{ fontSize:12.5, color:'var(--text2)' }}>{step}</div>
+            </div>
+          ))}
         </div>
-      </>)}
+      </div>
     </div>
   )
-}
-
-export default function ManagerPage() {
-  return <ProtectedRoute><ManagerContent/></ProtectedRoute>
 }
