@@ -59,18 +59,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // 1. Get session — set user immediately from metadata (fast)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      if (session?.user) {
-        setUserFast(session.user, setUser)
-        // Load full profile in background — doesn't block UI
-        loadProfileBackground(session.user, setUser)
-      }
-      setLoading(false) // ← unblocks UI immediately
-    })
+    let initialised = false
 
-    // 2. Listen for auth changes
+    // 1. Listen for auth changes FIRST (must be set up before getSession)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         setSession(session)
@@ -80,8 +71,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
           setUser(null)
         }
+        // Only set loading false after first event fires
+        if (!initialised) {
+          initialised = true
+          setLoading(false)
+        }
       }
     )
+
+    // 2. Get current session — triggers onAuthStateChange above
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      // If onAuthStateChange didn't fire (no session), unblock loading
+      if (!initialised) {
+        setSession(session)
+        if (session?.user) {
+          setUserFast(session.user, setUser)
+          loadProfileBackground(session.user, setUser)
+        }
+        initialised = true
+        setLoading(false)
+      }
+    })
+
     return () => subscription.unsubscribe()
   }, [])
 

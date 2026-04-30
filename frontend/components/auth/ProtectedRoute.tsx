@@ -1,19 +1,30 @@
 'use client'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
   const router = useRouter()
+  // Extra grace period — wait a tick after loading before deciding to redirect
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading) {
+      // Small delay to let onAuthStateChange fire after getSession
+      const t = setTimeout(() => setReady(true), 100)
+      return () => clearTimeout(t)
+    }
+  }, [loading])
+
+  useEffect(() => {
+    if (ready && !user) {
       router.push('/login?redirect=' + encodeURIComponent(window.location.pathname))
     }
-  }, [user, loading, router])
+  }, [ready, user, router])
 
-  if (loading) {
+  // Show spinner while loading OR during grace period
+  if (loading || !ready) {
     return (
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center',
