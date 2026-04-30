@@ -13,6 +13,7 @@ import traceback
 import asyncio
 import httpx
 import os
+import json as json_lib
 from datetime import datetime, timezone
 
 # ── Import your existing Python files ────────────────────────────────────────
@@ -552,6 +553,222 @@ def screener(
             continue
     return {"data": results, "count": len(results)}
 
+# ── Add these imports at the top of main.py ──────────────────────────────────
+# import httpx  (already added for alerts)
+# from datetime import datetime, timezone  (already added)
+
+# ── Add this endpoint to main.py ──────────────────────────────────────────────
+
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+GROQ_URL     = "https://api.groq.com/openai/v1/chat/completions"
+EDGAR_URL    = "https://data.sec.gov/submissions/CIK{cik}.json"
+EDGAR_SEARCH = "https://efts.sec.gov/LATEST/search-index?q=%22{ticker}%22&dateRange=custom&startdt={start}&enddt={end}&forms=10-K,10-Q,8-K"
+
+
+async def get_cik(ticker: str) -> str | None:
+    """Get SEC CIK number for a ticker."""
+    url = f"https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&company={ticker}&CIK={ticker}&type=10-K&dateb=&owner=include&count=1&search_text=&output=atom"
+    async with httpx.AsyncClient(timeout=10) as client:
+        try:
+            r = await client.get(url, headers={"User-Agent": "QuantDesk Pro atorralbasa@gmail.com"})
+            # Parse CIK from response
+            import re
+            match = re.search(r'CIK=(\d+)', r.text)
+            if match:
+                return match.group(1).zfill(10)
+        except Exception:
+            pass
+    return None
+
+
+async def get_sec_filings(ticker: str) -> list[dict]:
+    """Fetch recent SEC filings for a ticker via EDGAR."""
+    from datetime import timedelta
+    end   = datetime.now().strftime('%Y-%m-%d')
+    start = (datetime.now() - timedelta(days=180)).strftime('%Y-%m-%d')
+
+    url = f"https://efts.sec.gov/LATEST/search-index?q=%22{ticker}%22&dateRange=custom&startdt={start}&enddt={end}&forms=10-K,10-Q,8-K"
+    headers = {"User-Agent": "QuantDesk Pro atorralbasa@gmail.com"}
+
+    async with httpx.AsyncClient(timeout=15) as client:
+        try:
+            r = await client.get(url, headers=headers)
+            data = r.json()
+            hits = data.get("hits", {}).get("hits", [])
+            filings = []
+            for hit in hits[:5]:  # top 5 most recent
+                src = hit.get("_source", {})
+                filings.append({
+                    "form":    src.get("form_type", ""),
+                    "date":    src.get("period_of_report", ""),
+                    "title":   src.get("display_names", [ticker])[0] if src.get("display_names") else ticker,
+                    "excerpt": src.get("file_date", ""),
+                })
+            return filings
+        except Exception as e:
+            print(f"[EDGAR] Error: {e}")
+            return []
+
+
+async def score_sentiment_groq(ticker: str, filings: list[dict], price_data: dict) -> dict:
+    """Use Groq/Llama to score sentiment from filing data + price context."""
+    if not GROQ_API_KEY:
+        return {"error": "GROQ_API_KEY not set"}
+
+    # Build context
+    filing_text = "\n".join([
+        f"- {f['form']} filed {f['excerpt']} covering period {f['date']}"
+        for f in filings
+    ]) if filings else "No recent SEC filings found in last 180 days."
+
+    price_context = ""
+    if price_data:
+        price_context = f"""
+Recent price data:
+- Current price: ${price_data.get('price', 'N/A')}
+- 3-month return: {price_data.get('return_3mo', 'N/A')}%
+- RSI (14): {price_data.get('rsi', 'N/A')}
+- Annualised volatility: {price_data.get('vol', 'N/A')}%
+"""
+
+    prompt = f"""You are a senior equity analyst at an institutional investment firm. Analyse the following data for {ticker} and provide a structured sentiment assessment.
+
+SEC Filing Activity (last 180 days):
+{filing_text}
+
+{price_context}
+
+Provide your analysis in this EXACT JSON format (no markdown, no explanation outside the JSON):
+{{
+  "sentiment_score": <integer from -100 to +100, where -100 is extremely bearish, 0 is neutral, +100 is extremely bullish>,
+  "sentiment_label": "<one of: Strong Buy, Buy, Neutral, Sell, Strong Sell>",
+  "confidence": "<one of: High, Medium, Low>",
+  "momentum": "<one of: Accelerating, Stable, Decelerating>",
+  "key_themes": [
+    "<theme 1 in 8 words or less>",
+    "<theme 2 in 8 words or less>",
+    "<theme 3 in 8 words or less>"
+  ],
+  "risk_factors": [
+    "<risk 1 in 8 words or less>",
+    "<risk 2 in 8 words or less>"
+  ],
+  "analyst_note": "<2-3 sentence institutional-quality summary of the sentiment outlook for {ticker}>",
+  "filing_count": {len(filings)},
+  "data_quality": "<one of: Rich, Moderate, Limited>"
+}}"""
+
+    async with httpx.AsyncClient(timeout=30) as client:
+        try:
+            r = await client.post(
+                GROQ_URL,
+                headers={
+                    "Authorization": f"Bearer {GROQ_API_KEY}",
+                    "Content-Type":  "application/json",
+                },
+                json={
+                    "model":       "llama-3.3-70b-versatile",
+                    "messages":    [{"role": "user", "content": prompt}],
+                    "temperature": 0.3,
+                    "max_tokens":  800,
+                }
+            )
+            content = r.json()["choices"][0]["message"]["content"].strip()
+            # Strip markdown if present
+            if content.startswith("```"):
+                content = content.split("```")[1]
+                if content.startswith("json"):
+                    content = content[4:]
+            import json as json_lib
+            return json_lib.loads(content)
+        except Exception as e:
+            print(f"[Groq] Error: {e}")
+            return {
+                "sentiment_score": 0,
+                "sentiment_label": "Neutral",
+                "confidence":      "Low",
+                "momentum":        "Stable",
+                "key_themes":      ["Insufficient data for analysis"],
+                "risk_factors":    ["Limited filing data available"],
+                "analyst_note":    f"Unable to retrieve sufficient data for {ticker} at this time.",
+                "filing_count":    0,
+                "data_quality":    "Limited",
+            }
+
+
+@app.get("/api/sentiment/{ticker}")
+async def get_sentiment(ticker: str, period: str = "3mo"):
+    """
+    LLM-powered sentiment analysis for a ticker.
+    Combines SEC filing activity + price momentum + Groq AI scoring.
+    """
+    ticker = ticker.upper().strip()
+
+    # 1. Get price data for context
+    price_data = {}
+    try:
+        s = load_close_series(ticker, period="3mo")
+        if s is not None and len(s) >= 2:
+            ret_3mo = float((s.iloc[-1] / s.iloc[0] - 1) * 100)
+            price_data["price"]     = round(float(s.iloc[-1]), 2)
+            price_data["return_3mo"] = round(ret_3mo, 2)
+
+        # Get RSI
+        df = load_price_history(ticker, period="3mo")
+        if df is not None and not df.empty:
+            tc    = df["Close"]
+            rsi14 = rsi(tc, 14)
+            rv    = rolling_vol(tc.pct_change().dropna(), 20) * 100
+            if not rsi14.empty:
+                price_data["rsi"] = round(float(rsi14.iloc[-1]), 1)
+            if not rv.empty:
+                price_data["vol"] = round(float(rv.iloc[-1]), 1)
+    except Exception as e:
+        print(f"[sentiment] Price data error: {e}")
+
+    # 2. Get SEC filings
+    filings = await get_sec_filings(ticker)
+
+    # 3. Score with Groq
+    sentiment = await score_sentiment_groq(ticker, filings, price_data)
+
+    return {
+        "ticker":     ticker,
+        "price_data": price_data,
+        "filings":    filings,
+        "sentiment":  sentiment,
+        "generated":  datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@app.get("/api/sentiment/batch")
+async def batch_sentiment(tickers: str = Query("AAPL,MSFT,NVDA,GOOGL,TSLA")):
+    """Batch sentiment scores for multiple tickers (screener integration)."""
+    ticker_list = [t.strip().upper() for t in tickers.split(",")][:10]  # max 10
+    results = []
+
+    for ticker in ticker_list:
+        try:
+            # Quick price data only for batch (no filing fetch to save time)
+            price_data = {}
+            s = load_close_series(ticker, period="1mo")
+            if s is not None and len(s) >= 2:
+                ret = float((s.iloc[-1] / s.iloc[0] - 1) * 100)
+                price_data["price"]     = round(float(s.iloc[-1]), 2)
+                price_data["return_1mo"] = round(ret, 2)
+
+            sentiment = await score_sentiment_groq(ticker, [], price_data)
+            results.append({
+                "ticker":    ticker,
+                "score":     sentiment.get("sentiment_score", 0),
+                "label":     sentiment.get("sentiment_label", "Neutral"),
+                "momentum":  sentiment.get("momentum", "Stable"),
+                "note":      sentiment.get("analyst_note", ""),
+            })
+        except Exception:
+            results.append({ "ticker": ticker, "score": 0, "label": "Neutral", "momentum": "Stable", "note": "" })
+
+    return {"data": results}
 
 if __name__ == "__main__":
     import uvicorn
