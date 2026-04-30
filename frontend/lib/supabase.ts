@@ -1,9 +1,22 @@
 import { createClient } from '@supabase/supabase-js'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
+// Client-side Supabase instance (use in components / client-side code)
 export const supabase = createClient(url, key)
+
+// Server-side Supabase instance with session/cookie support (use in route handlers)
+export async function getSupabase() {
+  const cookieStore = await cookies()
+  return createServerClient(url, key, {
+    cookies: {
+      getAll: () => cookieStore.getAll(),
+    },
+  })
+}
 
 export type Profile = {
   id: string
