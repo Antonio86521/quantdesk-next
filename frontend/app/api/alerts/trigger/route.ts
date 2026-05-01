@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { createClient } from '@supabase/supabase-js'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Resend is initialised inside the handler so it doesn't fail at build time
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -31,6 +31,7 @@ export async function POST(req: NextRequest) {
     const appUrl     = process.env.NEXT_PUBLIC_APP_URL || 'https://quantdesk-next.vercel.app'
 
     // Send email
+    const resend = new Resend(process.env.RESEND_API_KEY)
     await resend.emails.send({
       from:    'QuantDesk Pro <onboarding@resend.dev>',
       to:      email,
