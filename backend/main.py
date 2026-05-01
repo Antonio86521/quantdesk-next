@@ -4,9 +4,6 @@ QuantDesk Pro — FastAPI Backend
 Wraps analytics.py, data_loader.py, options_models.py, strategies.py
 """
 
-from dotenv import load_dotenv
-load_dotenv()
-
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
