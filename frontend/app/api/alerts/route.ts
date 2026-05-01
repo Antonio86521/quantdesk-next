@@ -18,6 +18,7 @@ async function getUserFromRequest(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   const user = await getUserFromRequest(req)
+  console.log('[alerts POST] user:', user?.id, 'auth header:', req.headers.get('authorization')?.slice(0, 20))
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { data, error } = await supabase
