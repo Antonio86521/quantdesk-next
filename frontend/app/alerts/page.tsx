@@ -4,6 +4,7 @@ import { Plus, Bell, BellOff, Trash2, TrendingUp, TrendingDown, Activity, Refres
 import Badge from '@/components/ui/Badge'
 import SectionHeader from '@/components/ui/SectionHeader'
 import { useAuth } from '@/context/AuthContext'
+import { supabase } from '@/lib/supabase'
 
 type AlertCondition = 'above' | 'below'
 type AlertStatus    = 'active' | 'triggered' | 'paused'
@@ -26,18 +27,32 @@ function pctFromTarget(current: number | null, target: number) {
   return ((current - target) / target) * 100
 }
 
+// Auth-aware fetch — passes Supabase session token in Authorization header
+async function authFetch(url: string, options: RequestInit = {}) {
+  const { data: { session } } = await supabase.auth.getSession()
+  const token = session?.access_token
+  return fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(options.headers || {}),
+    },
+  })
+}
+
 export default function AlertsPage() {
   const { user } = useAuth()
-  const [alerts, setAlerts]         = useState<PriceAlert[]>([])
-  const [loading, setLoading]       = useState(true)
-  const [showForm, setShowForm]     = useState(false)
-  const [isMobile, setIsMobile]     = useState(false)
+  const [alerts, setAlerts]           = useState<PriceAlert[]>([])
+  const [loading, setLoading]         = useState(true)
+  const [showForm, setShowForm]       = useState(false)
+  const [isMobile, setIsMobile]       = useState(false)
   const [pushEnabled, setPushEnabled] = useState(false)
   const [pushLoading, setPushLoading] = useState(false)
-  const [filter, setFilter]         = useState<'all' | AlertStatus>('all')
-  const [form, setForm] = useState({ ticker:'', condition:'above' as AlertCondition, targetPrice:'', note:'' })
-  const [saving, setSaving]         = useState(false)
-  const [error, setError]           = useState('')
+  const [filter, setFilter]           = useState<'all' | AlertStatus>('all')
+  const [form, setForm]               = useState({ ticker:'', condition:'above' as AlertCondition, targetPrice:'', note:'' })
+  const [saving, setSaving]           = useState(false)
+  const [error, setError]             = useState('')
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768)
@@ -46,13 +61,10 @@ export default function AlertsPage() {
     return () => window.removeEventListener('resize', check)
   }, [])
 
-  // Check if push already enabled
   useEffect(() => {
     if ('serviceWorker' in navigator && 'PushManager' in window) {
       navigator.serviceWorker.ready.then(reg => {
-        reg.pushManager.getSubscription().then(sub => {
-          setPushEnabled(!!sub)
-        })
+        reg.pushManager.getSubscription().then(sub => setPushEnabled(!!sub))
       })
     }
   }, [])
@@ -60,7 +72,7 @@ export default function AlertsPage() {
   const loadAlerts = useCallback(async () => {
     if (!user) return
     try {
-      const res = await fetch('/api/alerts')
+      const res  = await authFetch('/api/alerts')
       const json = await res.json()
       if (json.data) setAlerts(json.data)
     } catch (e) {
@@ -72,12 +84,10 @@ export default function AlertsPage() {
 
   useEffect(() => {
     loadAlerts()
-    // Poll every 60s to reflect scheduler updates
     const id = setInterval(loadAlerts, 60_000)
     return () => clearInterval(id)
   }, [loadAlerts])
 
-  // Register service worker + subscribe to push
   const enablePush = async () => {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
       alert('Push notifications are not supported in this browser.')
@@ -87,26 +97,21 @@ export default function AlertsPage() {
     try {
       const reg = await navigator.serviceWorker.register('/sw.js')
       await navigator.serviceWorker.ready
-
       const permission = await Notification.requestPermission()
       if (permission !== 'granted') {
         alert('Please allow notifications to receive push alerts.')
         setPushLoading(false)
         return
       }
-
       const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(vapidKey),
       })
-
-      await fetch('/api/alerts/push-subscribe', {
+      await authFetch('/api/alerts/push-subscribe', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ subscription: sub }),
       })
-
       setPushEnabled(true)
     } catch (e) {
       console.error('Push subscribe error:', e)
@@ -120,9 +125,8 @@ export default function AlertsPage() {
     if (!form.ticker || !form.targetPrice) return
     setSaving(true); setError('')
     try {
-      const res = await fetch('/api/alerts', {
+      const res  = await authFetch('/api/alerts', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ticker:      form.ticker.toUpperCase(),
           condition:   form.condition,
@@ -144,15 +148,14 @@ export default function AlertsPage() {
 
   const deleteAlert = async (id: string) => {
     setAlerts(a => a.filter(x => x.id !== id))
-    await fetch(`/api/alerts/${id}`, { method: 'DELETE' })
+    await authFetch(`/api/alerts/${id}`, { method: 'DELETE' })
   }
 
   const togglePause = async (alert: PriceAlert) => {
     const newStatus = alert.status === 'paused' ? 'active' : 'paused'
     setAlerts(a => a.map(x => x.id === alert.id ? { ...x, status: newStatus } : x))
-    await fetch(`/api/alerts/${alert.id}`, {
+    await authFetch(`/api/alerts/${alert.id}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: newStatus }),
     })
   }
@@ -186,7 +189,6 @@ export default function AlertsPage() {
           <div style={{ fontSize:13, color:'var(--text2)' }}>Checked every 60s · Email + push notifications · Saved to your account</div>
         </div>
         <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-          {/* Push enable button */}
           {!pushEnabled && (
             <button onClick={enablePush} disabled={pushLoading} style={{ display:'flex', alignItems:'center', gap:7, padding:'9px 16px', borderRadius:9, background:'rgba(13,203,125,0.1)', border:'1px solid rgba(13,203,125,0.25)', color:'var(--green)', fontSize:13, fontWeight:600, cursor:'pointer' }}>
               {pushLoading ? <RefreshCw size={13} style={{ animation:'spin 1s linear infinite' }}/> : <Bell size={13}/>}
@@ -283,7 +285,7 @@ export default function AlertsPage() {
       ) : (
         <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
           {filtered.map(alert => {
-            const dist     = pctFromTarget(alert.current_price, alert.target_price)
+            const dist        = pctFromTarget(alert.current_price, alert.target_price)
             const isTriggered = alert.status === 'triggered'
             const isPaused    = alert.status === 'paused'
             const isAbove     = alert.condition === 'above'
@@ -297,7 +299,6 @@ export default function AlertsPage() {
             return (
               <div key={alert.id} style={{ background:isTriggered?'rgba(13,203,125,0.04)':'var(--bg2)', border:`1px solid ${isTriggered?'rgba(13,203,125,0.2)':'var(--b1)'}`, borderRadius:14, padding:'16px 20px', opacity:isPaused?0.6:1, transition:'all 0.15s' }}>
                 <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:12, flexWrap: isMobile?'wrap':'nowrap' }}>
-
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8, flexWrap:'wrap' }}>
                       <div style={{ fontFamily:'var(--fm)', fontSize:18, fontWeight:600, color:'var(--accent2)' }}>{alert.ticker}</div>
@@ -359,14 +360,11 @@ export default function AlertsPage() {
   )
 }
 
-// Helper — converts VAPID public key to ArrayBuffer
 function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
-  const padding = '='.repeat((4 - base64String.length % 4) % 4)
-  const base64  = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
-  const rawData = window.atob(base64)
+  const padding   = '='.repeat((4 - base64String.length % 4) % 4)
+  const base64    = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
+  const rawData   = window.atob(base64)
   const outputArray = new Uint8Array(rawData.length)
-  for (let i = 0; i < rawData.length; i += 1) {
-    outputArray[i] = rawData.charCodeAt(i)
-  }
+  for (let i = 0; i < rawData.length; i += 1) outputArray[i] = rawData.charCodeAt(i)
   return outputArray.buffer
 }
