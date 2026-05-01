@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
 import {
   LayoutDashboard, TrendingUp, Zap, Settings2, Waves,
   Dice5, Search, Globe, FolderOpen, BarChart3, FlaskConical,
-  Radio, Bell, BookOpen, FileText, Lock, LogOut, LogIn, X, Menu,
+  Radio, Bell, BookOpen, FileText, Lock, LogOut, LogIn, X, Menu, Activity,
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 
@@ -28,6 +28,7 @@ const NAV: { group: string; items: NavItem[] }[] = [
       { href:'/screener',   icon:Search,       label:'Screener' },
       { href:'/macro',      icon:Globe,        label:'Macro Dashboard' },
       { href:'/factor',     icon:FlaskConical, label:'Factor Exposure' },
+      { href:'/sentiment',  icon:Activity,     label:'Sentiment Alpha', badge:'AI' },
     ],
   },
   {
@@ -88,6 +89,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
             {items.map(({ href, icon:Icon, label, badge, protected:isProtected }) => {
               const active = path === href
               const locked = isProtected && !user
+              const isAI   = badge === 'AI'
               return (
                 <Link key={href} href={locked ? `/login?redirect=${href}` : href}
                   onClick={handleNav}
@@ -105,9 +107,14 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
                   <Icon size={15} strokeWidth={active?2:1.5} style={{ flexShrink:0, opacity:locked?0.5:1 }}/>
                   <span style={{ flex:1, opacity:locked?0.6:1 }}>{label}</span>
                   {locked && <Lock size={10} color="var(--text3)"/>}
-                  {badge && !locked && (
+                  {badge && !locked && !isAI && (
                     <span style={{ fontSize:9.5, fontWeight:700, padding:'1px 6px', borderRadius:10, background:badge==='Live'?'rgba(13,203,125,0.15)':'rgba(245,64,96,0.15)', color:badge==='Live'?'var(--green)':'var(--red)', border:`1px solid ${badge==='Live'?'rgba(13,203,125,0.2)':'rgba(245,64,96,0.2)'}` }}>
                       {badge==='Live'?'● Live':badge}
+                    </span>
+                  )}
+                  {isAI && (
+                    <span style={{ fontSize:9.5, fontWeight:700, padding:'1px 6px', borderRadius:10, background:'rgba(124,92,252,0.15)', color:'var(--purple)', border:'1px solid rgba(124,92,252,0.2)' }}>
+                      ✦ AI
                     </span>
                   )}
                   {isProtected && user && <span style={{ fontSize:9, fontWeight:700, padding:'1px 5px', borderRadius:4, background:'rgba(45,127,249,0.1)', color:'var(--accent2)', border:'1px solid rgba(45,127,249,0.2)' }}>PRO</span>}
@@ -158,10 +165,8 @@ export default function Sidebar() {
   const path = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
 
-  // Close sidebar on route change
   useEffect(() => { setMobileOpen(false) }, [path])
 
-  // Prevent body scroll when sidebar is open
   useEffect(() => {
     if (mobileOpen) document.body.style.overflow = 'hidden'
     else document.body.style.overflow = ''
@@ -172,21 +177,16 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Desktop sidebar — always visible */}
       <aside style={{
         width:224, minWidth:224, height:'100vh',
         background:'var(--bg2)', borderRight:'1px solid var(--b1)',
         display:'flex', flexDirection:'column', overflow:'hidden', zIndex:40,
-        // Hide on mobile
-        ...(typeof window !== 'undefined' && window.innerWidth <= 768 ? { display:'none' } : {}),
       }}
       className="desktop-sidebar"
       >
         <SidebarContent/>
       </aside>
 
-      {/* Mobile hamburger button — shown in Topbar, this just manages state */}
-      {/* Mobile drawer */}
       {mobileOpen && (
         <>
           <div className="sidebar-overlay" onClick={() => setMobileOpen(false)}/>
@@ -203,7 +203,6 @@ export default function Sidebar() {
         </>
       )}
 
-      {/* Expose toggle for Topbar — via custom event */}
       <style>{`
         .desktop-sidebar { display: flex !important; }
         @media (max-width: 768px) { .desktop-sidebar { display: none !important; } }
@@ -212,7 +211,6 @@ export default function Sidebar() {
   )
 }
 
-// Export toggle function via module-level event
 export function useSidebarToggle() {
   return () => {
     window.dispatchEvent(new CustomEvent('toggle-sidebar'))
