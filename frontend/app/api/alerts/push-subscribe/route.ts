@@ -3,8 +3,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
-function getSupabase() {
-  const cookieStore = cookies()
+async function getSupabase() {
+  const cookieStore = await cookies()
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -19,7 +19,7 @@ function getSupabase() {
 }
 
 export async function POST(req: NextRequest) {
-  const supabase = getSupabase()
+  const supabase = await getSupabase()
   const { data: { session } } = await supabase.auth.getSession()
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
