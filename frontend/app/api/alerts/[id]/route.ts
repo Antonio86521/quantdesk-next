@@ -2,18 +2,27 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+const SUPABASE_URL  = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const SUPABASE_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-async function getUserFromRequest(req: NextRequest) {
+async function getAuthenticatedClient(req: NextRequest) {
   const authHeader = req.headers.get('authorization')
   if (!authHeader) return null
+
   const token = authHeader.replace('Bearer ', '')
-  const { data: { user }, error } = await supabase.auth.getUser(token)
+
+  const client = createClient(SUPABASE_URL, SUPABASE_ANON, {
+    global: {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  })
+
+  const { data: { user }, error } = await client.auth.getUser(token)
   if (error || !user) return null
-  return user
+
+  return { client, user }
 }
 
 export async function PATCH(
@@ -21,12 +30,13 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
-  const user = await getUserFromRequest(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const auth = await getAuthenticatedClient(req)
+  if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const { client, user } = auth
   const body = await req.json()
 
-  const { data, error } = await supabase
+  const { data, error } = await client
     .from('alerts')
     .update(body)
     .eq('id', id)
@@ -43,10 +53,12 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
-  const user = await getUserFromRequest(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const auth = await getAuthenticatedClient(req)
+  if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { error } = await supabase
+  const { client, user } = auth
+
+  const { error } = await client
     .from('alerts')
     .delete()
     .eq('id', id)

@@ -2,26 +2,38 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+const SUPABASE_URL  = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const SUPABASE_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-async function getUserFromRequest(req: NextRequest) {
+async function getAuthenticatedClient(req: NextRequest) {
   const authHeader = req.headers.get('authorization')
   if (!authHeader) return null
+
   const token = authHeader.replace('Bearer ', '')
-  const { data: { user }, error } = await supabase.auth.getUser(token)
+
+  // Create a client with the user's JWT — this makes RLS work correctly
+  const client = createClient(SUPABASE_URL, SUPABASE_ANON, {
+    global: {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  })
+
+  // Verify the token is valid
+  const { data: { user }, error } = await client.auth.getUser(token)
   if (error || !user) return null
-  return user
+
+  return { client, user }
 }
 
 export async function GET(req: NextRequest) {
-  const user = await getUserFromRequest(req)
-  console.log('[alerts POST] user:', user?.id, 'auth header:', req.headers.get('authorization')?.slice(0, 20))
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const auth = await getAuthenticatedClient(req)
+  if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data, error } = await supabase
+  const { client, user } = auth
+
+  const { data, error } = await client
     .from('alerts')
     .select('*')
     .eq('user_id', user.id)
@@ -32,9 +44,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const user = await getUserFromRequest(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const auth = await getAuthenticatedClient(req)
+  if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const { client, user } = auth
   const body = await req.json()
   const { ticker, condition, targetPrice, note } = body
 
@@ -42,7 +55,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'ticker, condition, targetPrice required' }, { status: 400 })
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await client
     .from('alerts')
     .insert({
       user_id:      user.id,
