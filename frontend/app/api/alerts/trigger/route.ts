@@ -3,8 +3,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { createClient } from '@supabase/supabase-js'
 
-// Resend is initialised inside the handler so it doesn't fail at build time
-
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -19,23 +17,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    // Get user email
     const { data: { user }, error: userError } = await supabaseAdmin.auth.admin.getUserById(userId)
     if (userError || !user?.email) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    const email      = user.email
-    const direction  = condition === 'above' ? '↑ crossed above' : '↓ dropped below'
-    const pctDiff    = (((currentPrice - targetPrice) / targetPrice) * 100).toFixed(2)
-    const appUrl     = process.env.NEXT_PUBLIC_APP_URL || 'https://quantdesk-next.vercel.app'
+    const email     = user.email
+    const direction = condition === 'above' ? '↑ crossed above' : '↓ dropped below'
+    const appUrl    = process.env.NEXT_PUBLIC_APP_URL || 'https://quantdesk-next.vercel.app'
 
-    // Send email
     const resend = new Resend(process.env.RESEND_API_KEY)
     await resend.emails.send({
       from:    'QuantDesk Pro <onboarding@resend.dev>',
       to:      email,
-      subject: `🔔 Alert Triggered: ${ticker} ${direction} $${targetPrice}`,
+      subject: `🔔 Alert Triggered: ${ticker} ${direction} $${Number(targetPrice).toFixed(2)}`,
       html: `
         <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;background:#07090e;color:#e4ecf7;">
           <div style="margin-bottom:24px;">
@@ -67,7 +62,6 @@ export async function POST(req: NextRequest) {
       `,
     })
 
-    // Send push notification if subscription exists
     const { data: pushSub } = await supabaseAdmin
       .from('push_subscriptions')
       .select('subscription')
