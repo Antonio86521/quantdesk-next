@@ -577,7 +577,7 @@ function RiskContent() {
               <div style={{ display:'grid', gridTemplateColumns: isMobile?'1fr':'repeat(3,1fr)', gap:12 }}>
                 {[
                   { label:'Current Vol (Ann.)', value:fmt.pct(s.annVol),                                          color:s.annVol>0.3?'#f54060':s.annVol>0.2?'#f0a500':'#0dcb7d' },
-                  { label:'Vol Regime',         value:s.annVol>0.3?'High':'s.annVol>0.2'?'Elevated':'Normal',    color:s.annVol>0.3?'#f54060':s.annVol>0.2?'#f0a500':'#0dcb7d' },
+                  { label:'Vol Regime',         value:s.annVol>0.3?'High':s.annVol>0.2?'Elevated':'Normal',    color:s.annVol>0.3?'#f54060':s.annVol>0.2?'#f0a500':'#0dcb7d' },
                   { label:'Param VaR (1-day)',  value:fmt.pct(s.paramVar95),                                      color:'#f54060' },
                 ].map(({ label, value, color }) => (
                   <div key={label} style={{ background:'var(--bg2)', border:'1px solid var(--b1)', borderRadius:12, padding:'14px 16px' }}>
