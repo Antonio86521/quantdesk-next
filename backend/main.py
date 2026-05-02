@@ -29,7 +29,7 @@ from analytics import (
 from options_models import bs_price_only, implied_volatility_newton
 
 # ── Config ────────────────────────────────────────────────────────────────────
-FRONTEND_URL   = os.getenv("FRONTEND_URL", "https://quantdesk-next.vercel.app")
+FRONTEND_URL   = os.getenv("FRONTEND_URL", "https://quantdeskpro.com")
 SUPABASE_URL   = os.getenv("SUPABASE_URL", "")
 SUPABASE_KEY   = os.getenv("SUPABASE_SERVICE_KEY", "")
 ALERT_INTERVAL = int(os.getenv("ALERT_INTERVAL_SECONDS", "60"))
@@ -40,7 +40,12 @@ app = FastAPI(title="QuantDesk Pro API", version="2.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://quantdesk-next.vercel.app", "https://quantdeskpro.com", "*"],
+    allow_origins=[
+        "http://localhost:3000",
+        "https://quantdeskpro.com",
+        "https://www.quantdeskpro.com",
+        "https://quantdesk-next.vercel.app",
+    ],
     allow_credentials=True, allow_methods=["*"], allow_headers=["*"],
 )
 
@@ -92,7 +97,11 @@ async def check_alerts():
                     update_body["status"]       = "triggered"
                     update_body["triggered_at"] = datetime.now(timezone.utc).isoformat()
                     try:
-                        await client.post(f"{FRONTEND_URL}/api/alerts/trigger", json={"alertId": alert["id"], "userId": alert["user_id"], "ticker": ticker, "condition": condition, "targetPrice": target, "currentPrice": round(price, 4), "note": alert.get("note", "")}, timeout=10)
+                        await client.post(
+                            f"{FRONTEND_URL}/api/alerts/trigger",
+                            json={"alertId": alert["id"], "userId": alert["user_id"], "ticker": ticker, "condition": condition, "targetPrice": target, "currentPrice": round(price, 4), "note": alert.get("note", "")},
+                            timeout=10,
+                        )
                         print(f"[alerts] ✅ {ticker} {condition} ${target}")
                     except Exception as e:
                         print(f"[alerts] Trigger failed: {e}")
