@@ -55,7 +55,7 @@ export default function ContactPage() {
           <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
             {[
               { icon:'✉', label:'Email', value:'atorralbasa@gmail.com', href:'mailto:atorralbasa@gmail.com', desc:'For general enquiries' },
-              { icon:'⌥', label:'GitHub', value:'Antonio86521/quantdesk-next', href:'https://github.com/Antonio86521/quantdesk-next', desc:'Source code & issues' },
+              { icon:'⌥', label:'Linkedin', value:'https://www.linkedin.com/in/antonio-t-9306a8335/', href:'https://www.linkedin.com/in/antonio-t-9306a8335/', desc:'Source code & issues' },
               { icon:'🌐', label:'Website', value:'quantdeskpro.com', href:'https://quantdeskpro.com', desc:'Live platform' },
             ].map(({ icon, label, value, href, desc }) => (
               <a key={label} href={href} target="_blank" rel="noopener noreferrer" style={{ display:'flex', gap:14, padding:'20px', background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:14, textDecoration:'none', transition:'all 0.15s' }}
