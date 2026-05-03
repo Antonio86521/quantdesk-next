@@ -1,11 +1,12 @@
 'use client'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import {
   LayoutDashboard, TrendingUp, Zap, Settings2, Waves,
   Dice5, Search, Globe, FolderOpen, BarChart3, FlaskConical,
-  Radio, Bell, BookOpen, FileText, Lock, LogOut, LogIn, X, Menu, Activity,
+  Radio, Bell, BookOpen, FileText, Lock, LogOut, LogIn, X, Activity, Target,
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 
@@ -37,6 +38,7 @@ const NAV: { group: string; items: NavItem[] }[] = [
       { href:'/derivatives', icon:Settings2, label:'Derivatives' },
       { href:'/vol-surface', icon:Waves,     label:'Vol Surface' },
       { href:'/montecarlo',  icon:Dice5,     label:'Monte Carlo' },
+      { href:'/kelly',       icon:Target,    label:'Kelly / Position Sizer' },
     ],
   },
   {
@@ -65,23 +67,27 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
 
   return (
     <div style={{ display:'flex', flexDirection:'column', height:'100%' }}>
-      {/* Logo */}
-      <div style={{ padding:'18px 16px 16px', borderBottom:'1px solid var(--b1)', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-          <div style={{ width:34, height:34, borderRadius:9, flexShrink:0, background:'linear-gradient(135deg,#2d7ff9,#7c5cfc)', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'var(--fd)', fontWeight:800, fontSize:14, color:'#fff', boxShadow:'0 0 20px rgba(45,127,249,0.45)' }}>QD</div>
-          <div>
-            <div style={{ fontFamily:'var(--fd)', fontSize:14.5, fontWeight:700, letterSpacing:'-0.3px', lineHeight:1 }}>QuantDesk</div>
-            <div style={{ fontSize:9, color:'var(--text3)', letterSpacing:'1px', textTransform:'uppercase', marginTop:3 }}>Pro · Analytics</div>
-          </div>
-        </div>
+
+      {/* ── Logo ── */}
+      <div style={{ padding:'14px 16px', borderBottom:'1px solid var(--b1)', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <Link href="/" onClick={handleNav} style={{ textDecoration:'none', display:'flex', alignItems:'center' }}>
+          <Image
+            src="/logo.svg"
+            alt="QuantDesk Pro"
+            width={150}
+            height={40}
+            style={{ objectFit:'contain', objectPosition:'left center' }}
+            priority
+          />
+        </Link>
         {onClose && (
-          <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text3)', padding:4 }}>
+          <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text3)', padding:4, flexShrink:0 }}>
             <X size={18}/>
           </button>
         )}
       </div>
 
-      {/* Nav */}
+      {/* ── Nav ── */}
       <nav style={{ flex:1, overflowY:'auto', padding:'6px 8px 8px' }}>
         {NAV.map(({ group, items }) => (
           <div key={group} style={{ marginBottom:2 }}>
@@ -108,7 +114,10 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
                   <span style={{ flex:1, opacity:locked?0.6:1 }}>{label}</span>
                   {locked && <Lock size={10} color="var(--text3)"/>}
                   {badge && !locked && !isAI && (
-                    <span style={{ fontSize:9.5, fontWeight:700, padding:'1px 6px', borderRadius:10, background:badge==='Live'?'rgba(13,203,125,0.15)':'rgba(245,64,96,0.15)', color:badge==='Live'?'var(--green)':'var(--red)', border:`1px solid ${badge==='Live'?'rgba(13,203,125,0.2)':'rgba(245,64,96,0.2)'}` }}>
+                    <span style={{ fontSize:9.5, fontWeight:700, padding:'1px 6px', borderRadius:10,
+                      background:badge==='Live'?'rgba(13,203,125,0.15)':'rgba(245,64,96,0.15)',
+                      color:badge==='Live'?'var(--green)':'var(--red)',
+                      border:`1px solid ${badge==='Live'?'rgba(13,203,125,0.2)':'rgba(245,64,96,0.2)'}` }}>
                       {badge==='Live'?'● Live':badge}
                     </span>
                   )}
@@ -117,7 +126,9 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
                       ✦ AI
                     </span>
                   )}
-                  {isProtected && user && <span style={{ fontSize:9, fontWeight:700, padding:'1px 5px', borderRadius:4, background:'rgba(45,127,249,0.1)', color:'var(--accent2)', border:'1px solid rgba(45,127,249,0.2)' }}>PRO</span>}
+                  {isProtected && user && (
+                    <span style={{ fontSize:9, fontWeight:700, padding:'1px 5px', borderRadius:4, background:'rgba(45,127,249,0.1)', color:'var(--accent2)', border:'1px solid rgba(45,127,249,0.2)' }}>PRO</span>
+                  )}
                 </Link>
               )
             })}
@@ -125,7 +136,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
         ))}
       </nav>
 
-      {/* User panel */}
+      {/* ── User panel ── */}
       <div style={{ padding:10, borderTop:'1px solid var(--b1)', flexShrink:0 }}>
         {user ? (
           <div>
@@ -141,9 +152,10 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
                 <div style={{ width:7, height:7, borderRadius:'50%', background:'var(--green)', flexShrink:0, boxShadow:'0 0 8px rgba(13,203,125,0.6)' }}/>
               </div>
             </div>
-            <button onClick={handleLogout} style={{ width:'100%', display:'flex', alignItems:'center', gap:8, padding:'8px 10px', borderRadius:8, border:'1px solid var(--b1)', background:'transparent', color:'var(--text2)', fontSize:12, fontWeight:500, cursor:'pointer', transition:'all 0.14s' }}
-              onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background='rgba(245,64,96,0.08)'; el.style.color='var(--red)'; el.style.borderColor='rgba(245,64,96,0.2)' }}
-              onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background='transparent'; el.style.color='var(--text2)'; el.style.borderColor='var(--b1)' }}
+            <button onClick={handleLogout}
+              style={{ width:'100%', display:'flex', alignItems:'center', gap:8, padding:'8px 10px', borderRadius:8, border:'1px solid var(--b1)', background:'transparent', color:'var(--text2)', fontSize:12, fontWeight:500, cursor:'pointer', transition:'all 0.14s' }}
+              onMouseEnter={e => { const el=e.currentTarget as HTMLElement; el.style.background='rgba(245,64,96,0.08)'; el.style.color='var(--red)'; el.style.borderColor='rgba(245,64,96,0.2)' }}
+              onMouseLeave={e => { const el=e.currentTarget as HTMLElement; el.style.background='transparent'; el.style.color='var(--text2)'; el.style.borderColor='var(--b1)' }}
             >
               <LogOut size={13}/> Sign out
             </button>
@@ -168,6 +180,12 @@ export default function Sidebar() {
   useEffect(() => { setMobileOpen(false) }, [path])
 
   useEffect(() => {
+    const handler = () => setMobileOpen(o => !o)
+    window.addEventListener('toggle-sidebar', handler)
+    return () => window.removeEventListener('toggle-sidebar', handler)
+  }, [])
+
+  useEffect(() => {
     if (mobileOpen) document.body.style.overflow = 'hidden'
     else document.body.style.overflow = ''
     return () => { document.body.style.overflow = '' }
@@ -177,13 +195,11 @@ export default function Sidebar() {
 
   return (
     <>
-      <aside style={{
+      <aside className="desktop-sidebar" style={{
         width:224, minWidth:224, height:'100vh',
         background:'var(--bg2)', borderRight:'1px solid var(--b1)',
         display:'flex', flexDirection:'column', overflow:'hidden', zIndex:40,
-      }}
-      className="desktop-sidebar"
-      >
+      }}>
         <SidebarContent/>
       </aside>
 
@@ -191,8 +207,7 @@ export default function Sidebar() {
         <>
           <div className="sidebar-overlay" onClick={() => setMobileOpen(false)}/>
           <aside style={{
-            position:'fixed', top:0, left:0, bottom:0,
-            width:280, zIndex:40,
+            position:'fixed', top:0, left:0, bottom:0, width:280, zIndex:40,
             background:'var(--bg2)', borderRight:'1px solid var(--b2)',
             display:'flex', flexDirection:'column', overflow:'hidden',
             animation:'slideIn 0.25s cubic-bezier(0.4,0,0.2,1)',
@@ -212,7 +227,5 @@ export default function Sidebar() {
 }
 
 export function useSidebarToggle() {
-  return () => {
-    window.dispatchEvent(new CustomEvent('toggle-sidebar'))
-  }
+  return () => window.dispatchEvent(new CustomEvent('toggle-sidebar'))
 }
