@@ -12,13 +12,15 @@ import { useAuth } from '@/context/AuthContext'
 
 type NavItem = { href: string; icon: any; label: string; badge?: string; protected?: boolean }
 
+const PUBLIC_PATHS = ['/', '/about', '/contact', '/login', '/register', '/terms', '/privacy', '/risk-disclosure']
+
 const NAV: { group: string; items: NavItem[] }[] = [
   {
     group: 'Overview',
     items: [
-      { href:'/',        icon:LayoutDashboard, label:'Dashboard' },
-      { href:'/market',  icon:Radio,           label:'Market Overview', badge:'Live' },
-      { href:'/alerts',  icon:Bell,            label:'Alerts', badge:'3' },
+      { href:'/dashboard', icon:LayoutDashboard, label:'Dashboard' },
+      { href:'/market',    icon:Radio,           label:'Market Overview', badge:'Live' },
+      { href:'/alerts',    icon:Bell,            label:'Alerts', badge:'3' },
     ],
   },
   {
@@ -70,7 +72,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
 
       {/* ── Logo ── */}
       <div style={{ padding:'14px 16px', borderBottom:'1px solid var(--b1)', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-        <Link href="/" onClick={handleNav} style={{ textDecoration:'none', display:'flex', alignItems:'center' }}>
+        <Link href="/dashboard" onClick={handleNav} style={{ textDecoration:'none', display:'flex', alignItems:'center' }}>
           <Image
             src="/logo.svg"
             alt="QuantDesk Pro"
@@ -191,7 +193,8 @@ export default function Sidebar() {
     return () => { document.body.style.overflow = '' }
   }, [mobileOpen])
 
-  if (path === '/login' || path === '/register') return null
+  // Hide sidebar on public/landing pages
+  if (PUBLIC_PATHS.includes(path)) return null
 
   return (
     <>

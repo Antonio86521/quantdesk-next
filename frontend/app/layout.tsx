@@ -19,9 +19,8 @@ const BOTTOM_NAV = [
 function AppShell({ children }: { children: React.ReactNode }) {
   const path   = usePathname()
   const router = useRouter()
-  const isAuth = AUTH_ROUTES.includes(path)
-
-  if (isAuth) return <>{children}</>
+ const isPublic = AUTH_ROUTES.includes(path) || path === '/' || path === '/about' || path === '/contact'
+if (isPublic) return <>{children}</>
 
   return (
     <div style={{ display:'flex', height:'100vh', overflow:'hidden', background:'var(--bg)' }}>
