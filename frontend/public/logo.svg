@@ -1,0 +1,98 @@
+<svg width="100%" viewBox="0 0 680 320" role="img" xmlns="http://www.w3.org/2000/svg" style="">
+<title style="fill:rgb(0, 0, 0);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">QuantDesk Pro logo</title>
+<desc style="fill:rgb(0, 0, 0);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">Bold technical logo for QuantDesk Pro with QD monogram and chart motif in blue gradient</desc>
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#0d1b3e"/>
+    <stop offset="100%" stop-color="#0a1628"/>
+  </linearGradient>
+  <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0%" stop-color="#2d7ff9"/>
+    <stop offset="100%" stop-color="#7c5cfc"/>
+  </linearGradient>
+  <linearGradient id="bar1" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#2d7ff9" stop-opacity="0.9"/>
+    <stop offset="100%" stop-color="#1a5fd4" stop-opacity="0.4"/>
+  </linearGradient>
+  <linearGradient id="bar2" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#5ba3f5" stop-opacity="0.9"/>
+    <stop offset="100%" stop-color="#2d7ff9" stop-opacity="0.3"/>
+  </linearGradient>
+  <linearGradient id="bar3" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#7c5cfc" stop-opacity="0.9"/>
+    <stop offset="100%" stop-color="#5a3de0" stop-opacity="0.3"/>
+  </linearGradient>
+  <linearGradient id="bar4" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#2d7ff9" stop-opacity="1"/>
+    <stop offset="100%" stop-color="#1a5fd4" stop-opacity="0.5"/>
+  </linearGradient>
+  <linearGradient id="textgrad" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0%" stop-color="#ffffff"/>
+    <stop offset="100%" stop-color="#c8d8f8"/>
+  </linearGradient>
+  <clipPath id="iconclip">
+    <rect x="60" y="80" width="120" height="120" rx="20"/>
+  </clipPath>
+</defs>
+
+<!-- Icon mark background -->
+<rect x="60" y="80" width="120" height="120" rx="20" fill="url(#bg)" style="stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+<!-- Accent border -->
+<rect x="60" y="80" width="120" height="120" rx="20" fill="none" stroke="url(#accent)" stroke-width="1.5" opacity="0.6" style="fill:none;color:rgb(255, 255, 255);stroke-width:1.5px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.6;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+<!-- Grid lines inside icon -->
+<g clip-path="url(#iconclip)" opacity="0.08" style="fill:rgb(0, 0, 0);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.08;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">
+  <line x1="60" y1="107" x2="180" y2="107" stroke="#ffffff" stroke-width="0.5" style="fill:rgb(0, 0, 0);stroke:rgb(255, 255, 255);color:rgb(255, 255, 255);stroke-width:0.5px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <line x1="60" y1="134" x2="180" y2="134" stroke="#ffffff" stroke-width="0.5" style="fill:rgb(0, 0, 0);stroke:rgb(255, 255, 255);color:rgb(255, 255, 255);stroke-width:0.5px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <line x1="60" y1="161" x2="180" y2="161" stroke="#ffffff" stroke-width="0.5" style="fill:rgb(0, 0, 0);stroke:rgb(255, 255, 255);color:rgb(255, 255, 255);stroke-width:0.5px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <line x1="87" y1="80" x2="87" y2="200" stroke="#ffffff" stroke-width="0.5" style="fill:rgb(0, 0, 0);stroke:rgb(255, 255, 255);color:rgb(255, 255, 255);stroke-width:0.5px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <line x1="120" y1="80" x2="120" y2="200" stroke="#ffffff" stroke-width="0.5" style="fill:rgb(0, 0, 0);stroke:rgb(255, 255, 255);color:rgb(255, 255, 255);stroke-width:0.5px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <line x1="153" y1="80" x2="153" y2="200" stroke="#ffffff" stroke-width="0.5" style="fill:rgb(0, 0, 0);stroke:rgb(255, 255, 255);color:rgb(255, 255, 255);stroke-width:0.5px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+</g>
+
+<!-- Bar chart motif inside icon -->
+<rect x="76" y="152" width="14" height="28" rx="2" fill="url(#bar1)" style="stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+<rect x="96" y="138" width="14" height="42" rx="2" fill="url(#bar2)" style="stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+<rect x="116" y="122" width="14" height="58" rx="2" fill="url(#bar3)" style="stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+<rect x="136" y="108" width="14" height="72" rx="2" fill="url(#bar4)" style="stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+<!-- Trend line over bars -->
+<polyline points="83,155 103,140 123,124 143,110" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" style="fill:none;stroke:rgb(255, 255, 255);color:rgb(255, 255, 255);stroke-width:2px;stroke-linecap:round;stroke-linejoin:round;opacity:0.9;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+<!-- Dots on trend line -->
+<circle cx="83" cy="155" r="2.5" fill="#ffffff" opacity="0.9" style="fill:rgb(255, 255, 255);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.9;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+<circle cx="103" cy="140" r="2.5" fill="#ffffff" opacity="0.9" style="fill:rgb(255, 255, 255);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.9;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+<circle cx="123" cy="124" r="2.5" fill="#ffffff" opacity="0.9" style="fill:rgb(255, 255, 255);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.9;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+<circle cx="143" cy="110" r="3.5" fill="#2d7ff9" style="fill:rgb(45, 127, 249);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+<circle cx="143" cy="110" r="5.5" fill="#2d7ff9" opacity="0.25" style="fill:rgb(45, 127, 249);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.25;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+<!-- Blue accent bar at bottom of icon -->
+<rect x="60" y="192" width="120" height="8" rx="0" fill="url(#accent)" opacity="0.9" style="stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.9;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+<rect x="60" y="192" width="120" height="8" rx="0" fill="none" style="fill:none;stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+<!-- Wordmark -->
+<text x="204" y="138" font-family="Arial, sans-serif" font-weight="700" font-size="52" letter-spacing="-2" fill="url(#textgrad)" style="stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:Arial, sans-serif;font-size:52px;font-weight:700;text-anchor:start;dominant-baseline:auto">QuantDesk</text>
+<text x="207" y="172" font-family="Arial, sans-serif" font-weight="400" font-size="22" letter-spacing="6" fill="url(#accent)" style="stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:Arial, sans-serif;font-size:22px;font-weight:400;text-anchor:start;dominant-baseline:auto">PRO</text>
+
+<!-- Tagline -->
+<text x="207" y="196" font-family="Arial, sans-serif" font-weight="400" font-size="12" letter-spacing="2" fill="#4a6fa5" style="fill:rgb(74, 111, 165);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:Arial, sans-serif;font-size:12px;font-weight:400;text-anchor:start;dominant-baseline:auto">PORTFOLIO INTELLIGENCE PLATFORM</text>
+
+<!-- Horizontal rule under tagline -->
+<rect x="207" y="206" width="340" height="1" fill="url(#accent)" opacity="0.3" style="stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.3;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+<!-- Small icon-only version (compact) -->
+<text x="60" y="255" font-family="Arial, sans-serif" font-weight="700" font-size="10" letter-spacing="1" fill="#4a6fa5" style="fill:rgb(74, 111, 165);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:Arial, sans-serif;font-size:10px;font-weight:700;text-anchor:start;dominant-baseline:auto">ICON MARK</text>
+<rect x="60" y="265" width="40" height="40" rx="8" fill="url(#bg)" style="stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+<rect x="60" y="265" width="40" height="40" rx="8" fill="none" stroke="url(#accent)" stroke-width="1" style="fill:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+<rect x="66" y="286" width="4" height="10" rx="1" fill="url(#bar1)" style="stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+<rect x="72" y="281" width="4" height="15" rx="1" fill="url(#bar2)" style="stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+<rect x="78" y="275" width="4" height="21" rx="1" fill="url(#bar3)" style="stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+<rect x="84" y="270" width="4" height="26" rx="1" fill="url(#bar4)" style="stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+<polyline points="68,289 74,283 80,277 86,271" fill="none" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.85" style="fill:none;stroke:rgb(255, 255, 255);color:rgb(255, 255, 255);stroke-width:1.2px;stroke-linecap:round;stroke-linejoin:round;opacity:0.85;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+<circle cx="86" cy="271" r="1.8" fill="#2d7ff9" style="fill:rgb(45, 127, 249);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+<rect x="60" y="302" width="40" height="3" rx="0" fill="url(#accent)" opacity="0.8" style="stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.8;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+<!-- Favicon version label -->
+<text x="108" y="278" font-family="Arial, sans-serif" font-weight="400" font-size="10" letter-spacing="1" fill="#4a6fa5" style="fill:rgb(74, 111, 165);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:Arial, sans-serif;font-size:10px;font-weight:400;text-anchor:start;dominant-baseline:auto">FAVICON / APP ICON</text>
+<text x="108" y="293" font-family="Arial, sans-serif" font-weight="400" font-size="10" fill="#4a6fa5" style="fill:rgb(74, 111, 165);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:Arial, sans-serif;font-size:10px;font-weight:400;text-anchor:start;dominant-baseline:auto">40×40px compact mark</text>
+<text x="108" y="308" font-family="Arial, sans-serif" font-weight="400" font-size="10" fill="#4a6fa5" style="fill:rgb(74, 111, 165);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:Arial, sans-serif;font-size:10px;font-weight:400;text-anchor:start;dominant-baseline:auto">scales to 16×16 favicon</text>
+</svg>

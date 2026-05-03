@@ -25,17 +25,13 @@ function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div style={{ display:'flex', height:'100vh', overflow:'hidden', background:'var(--bg)' }}>
-      {/* Desktop sidebar */}
       <Sidebar/>
-
       <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden', minWidth:0 }}>
         <Topbar/>
         <main style={{ flex:1, overflowY:'auto', background:'var(--bg)' }}>
           <div className="page-enter">{children}</div>
         </main>
       </div>
-
-      {/* Mobile bottom nav */}
       <nav className="bottom-nav">
         {BOTTOM_NAV.map(({ href, icon:Icon, label }) => {
           const active = path === href
@@ -67,10 +63,45 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/* ── Viewport & PWA ── */}
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
         <meta name="theme-color" content="#07090e"/>
         <meta name="apple-mobile-web-app-capable" content="yes"/>
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+        <meta name="apple-mobile-web-app-title" content="QuantDesk Pro"/>
+        <meta name="application-name" content="QuantDesk Pro"/>
+
+        {/* ── Primary SEO ── */}
+        <title>QuantDesk Pro — Portfolio Intelligence Platform</title>
+        <meta name="description" content="Institutional-grade portfolio analytics for serious traders. Live P&L tracking, VaR, stress testing, factor exposure, Monte Carlo simulation and AI-powered sentiment analysis from SEC filings."/>
+        <meta name="keywords" content="portfolio analytics, stock screener, VaR calculator, factor exposure, portfolio risk, quantitative finance, options pricer, Monte Carlo simulation, Bloomberg alternative"/>
+        <meta name="author" content="QuantDesk Pro"/>
+        <meta name="robots" content="index, follow"/>
+        <link rel="canonical" href="https://quantdeskpro.com"/>
+
+        {/* ── Open Graph (LinkedIn, Facebook, WhatsApp) ── */}
+        <meta property="og:type"        content="website"/>
+        <meta property="og:url"         content="https://quantdeskpro.com"/>
+        <meta property="og:site_name"   content="QuantDesk Pro"/>
+        <meta property="og:title"       content="QuantDesk Pro — Portfolio Intelligence Platform"/>
+        <meta property="og:description" content="Institutional-grade portfolio analytics. Live P&L, VaR, stress testing, factor exposure, Monte Carlo simulation and AI sentiment analysis. Free to use."/>
+        <meta property="og:image"       content="https://quantdeskpro.com/og-image.png"/>
+        <meta property="og:image:width"  content="1200"/>
+        <meta property="og:image:height" content="630"/>
+        <meta property="og:image:alt"   content="QuantDesk Pro — Portfolio Intelligence Platform"/>
+
+        {/* ── Twitter / X card ── */}
+        <meta name="twitter:card"        content="summary_large_image"/>
+        <meta name="twitter:site"        content="@quantdeskpro"/>
+        <meta name="twitter:title"       content="QuantDesk Pro — Portfolio Intelligence Platform"/>
+        <meta name="twitter:description" content="Institutional-grade portfolio analytics. Live P&L, VaR, stress testing, Monte Carlo simulation and AI sentiment. Free to use."/>
+        <meta name="twitter:image"       content="https://quantdeskpro.com/og-image.png"/>
+
+        {/* ── Favicons ── */}
+        <link rel="icon"             href="/favicon.svg" type="image/svg+xml"/>
+        <link rel="icon"             href="/favicon.ico" sizes="any"/>
+        <link rel="apple-touch-icon" href="/apple-icon.png"/>
+        <link rel="manifest"         href="/manifest.json"/>
       </head>
       <body>
         <AuthProvider>
