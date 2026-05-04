@@ -302,7 +302,11 @@ async def get_sec_filings(ticker: str) -> list[dict]:
         try:
             r    = await client.get(url, headers={"User-Agent": "QuantDesk Pro atorralbasa@gmail.com"})
             hits = r.json().get("hits", {}).get("hits", [])
-            return [{"form":h.get("_source",{}).get("form_type",""),"date":h.get("_source",{}).get("period_of_report",""),"excerpt":h.get("_source",{}).get("file_date","")} for h in hits[:5]]
+            return [{
+                "form":    h.get("_source", {}).get("form_type", "—"),
+                "date":    h.get("_source", {}).get("file_date", "—"),
+                "excerpt": h.get("_source", {}).get("period_of_report", "—"),
+            } for h in hits[:5]]
         except Exception as e:
             print(f"[EDGAR] Error: {e}"); return []
 
