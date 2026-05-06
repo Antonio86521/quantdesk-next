@@ -4,23 +4,25 @@ import { AuthProvider } from '@/context/AuthContext'
 import Sidebar from '@/components/layout/Sidebar'
 import Topbar from '@/components/layout/Topbar'
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, TrendingUp, Search, Radio, FolderOpen } from 'lucide-react'
+import { LayoutDashboard, TrendingUp, Search, Radio, Bell } from 'lucide-react'
 
 const AUTH_ROUTES = ['/login', '/register']
 
+// ── Bottom nav — Alerts replaces Manager on mobile ──
 const BOTTOM_NAV = [
-  { href:'/',          icon:LayoutDashboard, label:'Home'      },
+  { href:'/dashboard', icon:LayoutDashboard, label:'Home'      },
   { href:'/portfolio', icon:TrendingUp,      label:'Portfolio' },
   { href:'/screener',  icon:Search,          label:'Screener'  },
   { href:'/market',    icon:Radio,           label:'Market'    },
-  { href:'/manager',   icon:FolderOpen,      label:'Manager'   },
+  { href:'/alerts',    icon:Bell,            label:'Alerts'    },
 ]
 
 function AppShell({ children }: { children: React.ReactNode }) {
   const path   = usePathname()
   const router = useRouter()
- const isPublic = AUTH_ROUTES.includes(path) || path === '/' || path === '/about' || path === '/contact'
-if (isPublic) return <>{children}</>
+
+  const isPublic = AUTH_ROUTES.includes(path) || path === '/' || path === '/about' || path === '/contact'
+  if (isPublic) return <>{children}</>
 
   return (
     <div style={{ display:'flex', height:'100vh', overflow:'hidden', background:'var(--bg)' }}>
@@ -78,18 +80,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="robots" content="index, follow"/>
         <link rel="canonical" href="https://quantdeskpro.com"/>
 
-        {/* ── Open Graph (LinkedIn, Facebook, WhatsApp) ── */}
-        <meta property="og:type"        content="website"/>
-        <meta property="og:url"         content="https://quantdeskpro.com"/>
-        <meta property="og:site_name"   content="QuantDesk Pro"/>
-        <meta property="og:title"       content="QuantDesk Pro — Portfolio Intelligence Platform"/>
-        <meta property="og:description" content="Institutional-grade portfolio analytics. Live P&L, VaR, stress testing, factor exposure, Monte Carlo simulation and AI sentiment analysis. Free to use."/>
-        <meta property="og:image"       content="https://quantdeskpro.com/og-image.png"/>
+        {/* ── Open Graph ── */}
+        <meta property="og:type"         content="website"/>
+        <meta property="og:url"          content="https://quantdeskpro.com"/>
+        <meta property="og:site_name"    content="QuantDesk Pro"/>
+        <meta property="og:title"        content="QuantDesk Pro — Portfolio Intelligence Platform"/>
+        <meta property="og:description"  content="Institutional-grade portfolio analytics. Live P&L, VaR, stress testing, factor exposure, Monte Carlo simulation and AI sentiment analysis. Free to use."/>
+        <meta property="og:image"        content="https://quantdeskpro.com/og-image.png"/>
         <meta property="og:image:width"  content="1200"/>
         <meta property="og:image:height" content="630"/>
-        <meta property="og:image:alt"   content="QuantDesk Pro — Portfolio Intelligence Platform"/>
+        <meta property="og:image:alt"    content="QuantDesk Pro — Portfolio Intelligence Platform"/>
 
-        {/* ── Twitter / X card ── */}
+        {/* ── Twitter / X ── */}
         <meta name="twitter:card"        content="summary_large_image"/>
         <meta name="twitter:site"        content="@quantdeskpro"/>
         <meta name="twitter:title"       content="QuantDesk Pro — Portfolio Intelligence Platform"/>
